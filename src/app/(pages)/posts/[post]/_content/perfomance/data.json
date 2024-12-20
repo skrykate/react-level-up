@@ -1,0 +1,9 @@
+{
+    "title": "Performance",
+    "description": "Boost your React app's performance by focusing on what truly matters. Learn to avoid premature optimization, manage bundle size effectively, and tackle unnecessary re-renders using techniques like `useCallback` and `useMemo`.",
+    "section": "best practices",
+    "last_updated_date": "06.06.24",
+    "flags": {
+        "showCodeNotice": false
+    }
+}

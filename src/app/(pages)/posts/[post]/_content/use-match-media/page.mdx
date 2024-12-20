@@ -1,0 +1,279 @@
+import { CaseResponsiveMenu } from './_features/case-responsive-menu';
+import { CaseNewsGrid } from './_features/case-news-grid';
+import { CaseResponsiveContainer } from './_features/case-responsive-container';
+
+<ContentWrapper>
+## Explanation
+
+The `useMatchMedia` hook simplifies responsive design implementation in React applications by streamlining media query management. Developers can define device-specific conditions with ease, abstracting away the complexities of directly working with `window.matchMedia`. This hook offers a straightforward interface for accessing media query results, enhancing code readability and maintainability.
+
+By integrating `useMatchMedia`, developers can encapsulate media query logic within reusable components, fostering modular and scalable code structures. This enables efficient handling of different device sizes without cluttering component code with intricate conditions. With its intuitive API, `useMatchMedia` facilitates the creation of responsive designs, empowering developers to focus on crafting engaging user interfaces.
+
+Furthermore, `useMatchMedia` promotes best practices by encouraging separation of concerns and encapsulation of functionality. Centralizing media query management within this custom hook promotes code reusability and simplifies maintenance efforts. This abstraction shields developers from the complexities of directly interacting with `MediaQueryList` objects, providing an ergonomic solution for responsive behavior in React components.
+
+Developers can easily customize device-specific conditions according to their project requirements by modifying the `devices` object within the hook. By adjusting the key-value pairs in the `devices` object, developers can define their own breakpoints and media query conditions tailored to their application's design and layout needs.
+
+In essence, `useMatchMedia` offers a streamlined approach to responsive design implementation, abstracting away the intricacies of media query handling while providing a clean and intuitive interface. Its integration within React components fosters code modularity, readability, and scalability, ultimately enhancing the development experience and delivering a seamless user experience across various devices.
+
+### Usage Cases
+
+-   **Adaptive Layouts**: Create responsive layouts that adapt seamlessly to various device sizes, ensuring optimal display across mobile, tablet, and desktop screens.
+-   **Conditional Component Rendering**: Implement conditional rendering based on device type, allowing different components to be displayed for mobile, tablet, and desktop users, enhancing user experience and content presentation.
+-   **Dynamic Styling**: Adjust CSS styles dynamically based on the user's device, enabling tailored visual experiences for different screen sizes and resolutions without cluttering code with manual media query management.
+-   **Device-Specific Functionality**: Tailor functionality within components to specific devices, providing unique features or interactions optimized for mobile, tablet, and desktop users, enhancing usability and engagement.
+-   **Media Query Abstraction**: Abstract away the complexities of media query handling by encapsulating logic within the custom hook, promoting code reusability and simplifying maintenance efforts in responsive web development.
+-   **Efficient Resource Loading**: Optimize resource loading by conditionally fetching or rendering content based on device characteristics determined by the custom hook, improving performance and reducing unnecessary bandwidth usage.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+// Define an object for different device types, each associated with a media
+// query string that describes the screen size ranges for those devices
+const devices = {
+    isMobile: '(max-width: 766px)',
+    isTablet: '(min-width: 767px) and (max-width: 1199px)',
+    isDesktop: '(min-width: 1200px)',
+};
+
+// Create an array by mapping over the values of the `devices` object,
+// to generate a `MediaQueryList` object for each media query string.
+// These objects are used to check if the document matches the media query
+const mediaQueryLists = Object.values(devices).map((query) => {
+    return window.matchMedia(query);
+});
+
+// Function to get an array of boolean values by mapping over `mediaQueryLists`,
+// where each boolean indicates whether the respective media query
+// currently matches the document state
+const getValues = (): boolean[] => {
+    return mediaQueryLists.map((list: MediaQueryList) => list.matches);
+};
+
+// Define the return type of the hook.
+// The keys represent device types, and the values indicate the match status for each device type
+type MatchMediaResult = Record<string, boolean>;
+
+const useMatchMedia = (): MatchMediaResult => {
+    const [values, setValues] = useState<boolean[]>(getValues);
+
+    useLayoutEffect(() => {
+        // Define the handler function that updates the state when the status of a media query changes
+        const handleChange = () => {
+            setValues(getValues());
+        };
+
+        // Attach an event listener for the `change` event to each `MediaQueryList`
+        // in `mediaQueryLists`, so that `handleChange` is called whenever the match
+        // status of a media query changes
+        mediaQueryLists.forEach((list) =>
+            list.addEventListener('change', handleChange)
+        );
+
+        // Return a cleanup function that removes the event listeners
+        // from each `MediaQueryList` when the component unmounts,
+        // ensuring there are no duplicate listeners
+        return () =>
+            mediaQueryLists.forEach((list) =>
+                list.removeEventListener('change', handleChange)
+            );
+    }, []);
+
+    // Create an object by reducing over the keys of devices,
+    // mapping each device type to its corresponding boolean value
+    // from the values array, which represents the match status
+    const deviceIndicators: MatchMediaResult = Object.keys(devices).reduce(
+        (acc, screen, index) => ({
+            ...acc,
+            [screen]: values[index],
+        }),
+        {}
+    );
+
+    // Return the object containing device indicators,
+    // which provide a boolean value for each device type indicating
+    // whether the current screen size matches the corresponding media query
+    return deviceIndicators;
+};
+
+export default useMatchMedia;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const { isMobile, isTablet, isDesktop } = useMatchMedia();
+```
+
+### Parameters
+
+This hook doesn't accept any parameters.
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'isMobile',
+                cells: [
+                    'boolean',
+                    'A boolean value indicating whether the current device is recognized as a mobile device.',
+                ],
+            },
+            {
+                head: 'isTablet',
+                cells: [
+                    'boolean',
+                    'A boolean value indicating whether the current device is recognized as a tablet device.',
+                ],
+            },
+            {
+                head: 'isDesktop',
+                cells: [
+                    'boolean',
+                    'A boolean value indicating whether the current device is recognized as a desktop device.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Dynamic Component Rendering Based on Device Type
+
+This example demonstrates how to use the `useMatchMedia` custom hook to create a responsive layout that adapts based on the device type. The hook returns values indicating whether the user is on a mobile, tablet, or desktop device. Based on this, different components are rendered for each device type, ensuring an optimized user experience across various screen sizes. This approach allows the UI to dynamically adjust and provide the most suitable layout for each device.
+
+```tsx
+const Container: FC = () => {
+    // Destructure the values returned by the custom hook
+    const { isMobile, isTablet } = useMatchMedia();
+
+    return (
+        <Layer title="Container">
+            {
+                // Render different components based on the device type
+                isMobile ? (
+                    // If the device is mobile, render the `MobileComponent`
+                    <MobileComponent />
+                ) : // If the device is not mobile, check if it's a tablet
+                isTablet ? (
+                    // If it's, render the `TabletComponent`,
+                    <TabletComponent />
+                ) : (
+                    // otherwise, render the `DesktopComponent`
+                    <DesktopComponent />
+                )
+            }
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isFullWidth>
+    <CaseResponsiveContainer />
+</ExampleWrapper>
+
+### Adaptive Menu Based on Device Type
+
+This example demonstrates how to conditionally render different menu components based on the device type using the `useMatchMedia` custom hook. When viewed on a mobile device, the `HamburgerMenu` is displayed, providing a compact navigation option. On larger screens, the `RegularMenu` is shown, offering a more traditional navigation layout. This approach ensures an optimized user experience across various devices.
+
+```tsx
+const Container: FC = () => {
+    const { isMobile } = useMatchMedia();
+
+    return (
+        <Layer title="Container">
+            {
+                // Conditional rendering of menu component based on device type
+                isMobile ? <HamburgerMenu /> : <RegularMenu />
+            }
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isFullWidth>
+    <CaseResponsiveMenu />
+</ExampleWrapper>
+
+### Responsive Grid Layout with Dynamic Device Adaptation
+
+This example demonstrates a responsive grid layout that adapts to different device types. Using the `useMatchMedia` custom hook, the layout dynamically adjusts the number of columns based on whether the user is on a mobile, tablet, or desktop device. The class for the container is dynamically set with the `containerClass` variable, which ensures that the appropriate grid styles are applied based on the device type. This ensures an optimized user experience across various screen sizes, making the interface more intuitive and user-friendly.
+
+```css
+.container {
+    /* Styles for mobile devices */
+    /* Blocks are stacked vertically */
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 16px 0;
+    width: 100%;
+}
+
+.tablet {
+    /* Additional styles for tablet devices */
+    /* Blocks are arranged in a 2-column grid */
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.desktop {
+    /* Additional styles for desktop devices */
+    /* Blocks are arranged in a 3-column grid */
+    grid-template-columns: repeat(3, 1fr);
+}
+```
+
+```tsx
+const items = loadData(6);
+
+const Container: FC = () => {
+    const { isTablet, isDesktop } = useMatchMedia();
+
+    // Determine the container class based on the device type.
+    // If the device is a desktop, set the container class to "desktop".
+    // If it's a tablet, set the container class to "tablet".
+    // otherwise (if it's a mobile device) keep it as "container".
+    const containerClass = isDesktop ? 'desktop' : isTablet ? 'tablet' : '';
+
+    return (
+        <Layer title="Container">
+            <Message>
+                Dynamic styling adapted to your device. Block positions adjust
+                seamlessly based on screen size.
+            </Message>
+            <div className="relative border-y-4 border-neutral-900 dark:border-neutral-100">
+                <div className={cn('container', containerClass)}>
+                    {items.map((item) => (
+                        <Square key={item.id}>
+                            <span className="font-monoBrand p-4 text-center text-2xl">
+                                {item.name}
+                            </span>
+                        </Square>
+                    ))}
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isFullWidth>
+    <CaseNewsGrid />
+</ExampleWrapper>
+
+</ContentWrapper>

@@ -1,0 +1,9 @@
+{
+    "title": "Ineffective Access to Component Props",
+    "description": "Learn how to avoid ineffective access to React component props! Discover how passing multiple values inside objects can complicate readability and maintenance, and explore better practices for clearer, more efficient code.",
+    "section": "common mistakes",
+    "last_updated_date": "29.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "title": "Component Mental Models",
+    "description": "Explore component mental models in React! Compare traditional and modern approaches to structuring code, and learn how to create modular, maintainable applications with containers and presentational components.",
+    "section": "best practices",
+    "last_updated_date": "15.05.24",
+    "flags": {
+        "showCodeNotice": false
+    }
+}

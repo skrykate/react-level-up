@@ -1,0 +1,80 @@
+#------------------------ Node.js ------------------------#
+## dependency directories
+node_modules/
+
+## lock file
+package-lock.json
+
+#---------------------- TypeScript -----------------------#
+*.tsbuildinfo
+
+#------------------------- Logs --------------------------#
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+#------------------- Environment files -------------------#
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+#------------------ Configuration files ------------------#
+*.pem
+
+#---------------------- Output files ---------------------#
+build/
+dist/
+
+#---------------------- Cache files ----------------------#
+.cache/
+*.tmp
+*.swp
+*.swo
+
+#-------------------------- IDE --------------------------#
+## JetBrains
+.idea/
+
+## Sublime Text
+*.sublime-workspace
+
+## VSCode
+.vscode/
+
+#----------------------- OS Files ------------------------#
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Linux
+*~
+
+#------------------------ Next.js ------------------------#
+/.next/
+
+#------------------------- Vercel ------------------------#
+.vercel
+vercel.json
+
+#------------------------ Project ------------------------#
+README.md
+LICENSE
+
+# git
+.gitignore
+.github
+
+## eslint
+.eslintignore
+
+## prettier
+.prettierignore

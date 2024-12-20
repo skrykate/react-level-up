@@ -1,0 +1,442 @@
+import { CaseUserEmailList } from './_features/case-user-email-list';
+import { CaseUserList } from './_features/case-user-list';
+import { CaseFormData } from './_features/case-form-data';
+
+<ContentWrapper>
+## Explanation
+
+The `useAsync` custom hook simplifies handling asynchronous operations within React components. It provides an easy-to-use interface for executing asynchronous functions and managing their state, including the current status, result value, and any encountered errors. This abstraction streamlines the process of dealing with asynchronous code, making it more manageable and readable within React applications.
+
+At its core, the hook exposes an `execute` function, which triggers the asynchronous operation. This function takes care of setting the appropriate status, clearing any previous values or errors, and then executing the provided asynchronous function with the given arguments. Upon completion, it updates the hook's state based on the success or failure of the operation.
+
+Additionally, the hook offers an `immediate` parameter, which controls whether the provided asynchronous function should be executed immediately upon hook initialization. By default, `immediate` is set to `true`, so the asynchronous function runs right away. However, if `immediate` is explicitly set to `false`, the function will not execute until manually triggered through the `execute` function.
+
+By encapsulating the complexity of asynchronous code handling, `useAsync` enhances code readability and maintainability, enabling developers to focus on building robust React components without getting bogged down in asynchronous intricacies.
+
+### Usage Cases
+
+-   **Asynchronous Data Handling**: Employ the `useAsync` hook for managing asynchronous data fetching from APIs, ensuring efficient loading and error handling.
+-   **Form Submission**: Simplify form submissions by utilizing the `useAsync` hook, enabling streamlined handling of server requests with loading feedback and error management.
+-   **Custom Asynchronous Tasks**: Leverage the flexibility of the `useAsync` hook for handling various asynchronous operations within React components, enhancing code organization and readability.
+-   **Efficient Component Mounting**: Optimize component mounting processes with the `useAsync` hook, executing asynchronous tasks only when necessary to improve application performance.
+-   **Dynamic UI Rendering**: Dynamically update UI elements based on the status of asynchronous operations managed by the `useAsync` hook, providing users with real-time feedback.
+-   **Error Handling**: Enhance error handling capabilities with the `useAsync` hook, ensuring graceful recovery from errors encountered during asynchronous operations for improved user experience.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+// Define and export an enum representing different states of the asynchronous operation
+export enum Status {
+    IDLE = 'idle',
+    PENDING = 'pending',
+    SUCCESS = 'success',
+    ERROR = 'error',
+}
+
+// Define an interface for the object returned from the `useAsync` hook
+interface AsyncState<T> {
+    status: Status;
+    value: T | null;
+    error: Error | null;
+    execute: (...args: unknown[]) => Promise<void>;
+}
+
+const useAsync = <T>(
+    asyncFunction: (...args: unknown[]) => Promise<T>,
+    immediate = true
+): AsyncState<T> => {
+    const [status, setStatus] = useState<Status>(Status.IDLE);
+
+    const [value, setValue] = useState<T | null>(null);
+
+    const [error, setError] = useState<Error | null>(null);
+
+    // The `execute` function wraps `asyncFunction` with the provided
+    // arguments and handles setting state;
+    // `useCallback` prevents `useEffect` from being called on every render,
+    // so the `useEffect` is triggered only when `asyncFunction` changes (its reference)
+    const execute = useCallback(
+        async (...args: unknown[]) => {
+            setStatus(Status.PENDING);
+
+            setValue(null);
+
+            setError(null);
+
+            try {
+                const response = await asyncFunction(...args);
+
+                setValue(response);
+
+                setStatus(Status.SUCCESS);
+            } catch (error) {
+                setError(error as Error);
+
+                setStatus(Status.ERROR);
+            }
+        },
+        [asyncFunction]
+    );
+
+    // Automatically run `execute` if `immediate` is `true` on component mount,
+    // alternatively, `execute` can be triggered manually (e.g., via a button click)
+    useEffect(() => {
+        if (immediate) {
+            execute();
+        }
+    }, [execute, immediate]); // Re-run `useEffect` only when any of these values change
+
+    return { execute, status, value, error };
+};
+
+export default useAsync;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Reference
+
+```tsx
+const { execute, status, value, error } = useAsync(asyncFunction, immediate?);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'asyncFunction',
+                cells: [
+                    '(...args: any[]) => Promise<T>',
+                    'An asynchronous function to be executed.',
+                ],
+            },
+            {
+                head: 'immediate (optional)',
+                cells: [
+                    'boolean',
+                    'Determines whether the async function should be executed immediately upon hook initialization. Defaults to `true`.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'execute',
+                cells: [
+                    '(...args: any[]) => Promise<void>',
+                    'A function to trigger the asynchronous operation.',
+                ],
+            },
+            {
+                head: 'status',
+                cells: [
+                    'Status',
+                    'The current status of the asynchronous operation ("idle", "pending", "success", or "error").',
+                ],
+            },
+            {
+                head: 'value',
+                cells: [
+                    'T | null',
+                    'The result value of the asynchronous operation. Can be `null` if no value is available or if an error occurred.',
+                ],
+            },
+            {
+                head: 'error',
+                cells: [
+                    'Error | null',
+                    'The `Error` object representing any encountered error during the asynchronous operation. `null` if no error occurred.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Fetch Users' Names upon button click
+
+This example demonstrates how to use the `useAsync` hook to fetch data asynchronously from an API endpoint. The `Container` component utilizes the `useAsync` hook to handle the asynchronous operation, triggering data fetching upon button click. It dynamically renders different UI elements (`Loader`, `Message`, `List`) based on the current status of the asynchronous operation.
+
+```tsx
+// Function to fetch user data asynchronously
+const fetchUserNames = async () => {
+    const users = await loadData();
+
+    // Extract and return only users' names from fetched data
+    return users.map(({ id, name }) => ({
+        id,
+        name,
+    }));
+};
+
+const Container: FC = () => {
+    // Call the `useAsync` hook to handle the asynchronous operation,
+    // setting `immediate` to `false` to prevent function execution on component mount
+    const {
+        execute: handleFetch,
+        status,
+        value,
+        error,
+    } = useAsync(fetchUserNames, false);
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full flex-col items-center space-y-6">
+                {/* Button to trigger data fetching */}
+                <Button
+                    onClick={handleFetch}
+                    disabled={
+                        status === Status.PENDING || status === Status.SUCCESS
+                    }
+                >
+                    {/* Display appropriate text based on the current `status` */}
+                    {status === Status.PENDING
+                        ? 'Loading...'
+                        : status === Status.SUCCESS
+                          ? 'Loaded'
+                          : 'Load Users'}
+                </Button>
+                {/* Display a loader while fetching data */}
+                {status === Status.PENDING && <Loader />}
+                {/* Display an error message if fetching data failed */}
+                {status === Status.ERROR && error !== null && (
+                    <Message type={MessageType.Error}>{error.message}</Message>
+                )}
+                {/* Display the list of users' names if data fetching succeeded */}
+                {status === Status.SUCCESS && value !== null && (
+                    <List items={value} />
+                )}
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUserList />
+</ExampleWrapper>
+
+### Form Data Submission
+
+This example demonstrates the use of a custom `useAsync` hook to handle asynchronous form submission. The form collects user's name and email, and on submission, the button is disabled to prevent duplicate requests. The submission process displays a loader while the request is pending, followed by a success message if the server response is successful or an error message if the submission fails. The form fields are also disabled upon successful submission to ensure a seamless user experience. This setup emphasizes clear feedback to the user at every stage of the process.
+
+```tsx
+interface ServerResponse {
+    success: boolean;
+    message: string;
+}
+
+interface IFormData {
+    name: string;
+    email: string;
+}
+
+// Function to asynchronously submit form data to the server
+const submitFormData = async (...args: unknown[]): Promise<ServerResponse> => {
+    // Check if the first argument is a valid object representing form data
+    if (args.length > 0 && typeof args[0] === 'object' && args[0] !== null) {
+        const formData = args[0] as IFormData;
+
+        // Simulated request to the server (replace with a real request in production)
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                try {
+                    resolve({
+                        success: true,
+                        message: 'Form submitted successfully!',
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            }, 2000); // Simulated server response delay (2 seconds)
+        });
+    } else {
+        // Handle cases where the provided argument is not valid form data
+        throw new Error('Invalid form data');
+    }
+};
+
+const Container: FC = () => {
+    const [formData, setFormData] = useState<IFormData>({
+        name: '',
+        email: '',
+    });
+
+    // Call the `useAsync` hook to handle the asynchronous operation,
+    // setting `immediate` to `false` to prevent function execution on mount
+    const { execute, status, value, error } = useAsync<ServerResponse>(
+        submitFormData,
+        false
+    );
+
+    const isEmpty = formData.name === '' || formData.email === '';
+
+    // Function to handle input changes
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
+    // Function to handle form submission
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        // Check if both fields are filled
+        if (formData.name.trim() !== '' && formData.email.trim() !== '') {
+            // Execute request on form submission
+            execute(formData);
+        } else {
+            // If fields are empty, you can do something else, like showing an error
+            console.error('Name and Email are required');
+        }
+    };
+
+    return (
+        <Layer title="Container">
+            <form
+                className="flex w-full flex-col items-center justify-center space-y-4"
+                onSubmit={handleSubmit}
+            >
+                <div className="flex w-full flex-col gap-2">
+                    <Label>Name</Label>
+                    <Input
+                        value={formData.name}
+                        onChange={handleChange}
+                        name="name"
+                        disabled={status === Status.SUCCESS}
+                    />
+                </div>
+                <div className="flex w-full flex-col gap-2">
+                    <Label>Email</Label>
+                    <Input
+                        value={formData.email}
+                        onChange={handleChange}
+                        type="email"
+                        name="email"
+                        placeholder="example@rlu.dev"
+                        disabled={status === Status.SUCCESS}
+                    />
+                </div>
+                <Button
+                    type="submit"
+                    disabled={
+                        status === Status.PENDING ||
+                        status === Status.SUCCESS ||
+                        isEmpty
+                    }
+                >
+                    {/* Display appropriate text based on the current `status` */}
+                    {status === Status.PENDING
+                        ? 'Sending...'
+                        : status === Status.SUCCESS
+                          ? 'Sent'
+                          : 'Send'}
+                </Button>
+            </form>
+            <div className="flex w-full justify-center">
+                {/* Display a loader while submiting data */}
+                {status === Status.PENDING ? (
+                    <Loader />
+                ) : (
+                    <>
+                        {/* Display an error message if the request fails */}
+                        {status === Status.ERROR && error !== null && (
+                            <Message type={MessageType.Error}>
+                                {error.message}
+                            </Message>
+                        )}
+                        {/* Display data if available */}
+                        {status === Status.SUCCESS && (
+                            <Message type={MessageType.Success}>
+                                {value && value.success && value.message}
+                            </Message>
+                        )}
+                    </>
+                )}
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseFormData />
+</ExampleWrapper>
+
+### Fetch Users' Emails upon component mount
+
+This example utilizes the `useAsync` hook to perform an asynchronous operation upon component mount. By omitting the `immediate` parameter in the `useAsync` call, the request for users' emails is triggered immediately upon hook initialization, eliminating the need for additional `useEffect` usage. The `UserEmailList` component displays a list of users' emails with features to handle loading and error states.
+
+```tsx
+// Function to fetch user data asynchronously
+const fetchUserEmails = async () => {
+    const users = await loadData();
+
+    // Extract and return only users' emails from fetched data
+    return users.map(({ id, email }) => ({
+        id,
+        name: email,
+    }));
+};
+
+const UserEmailList: FC = () => {
+    // Call the `useAsync` hook without passing the `immediate` argument and without
+    // extracting `execute`, so the async function runs automatically on component mount
+    const { status, value, error } = useAsync(fetchUserEmails);
+
+    // Display a loader while data is being fetched
+    if (status === Status.PENDING) {
+        return <Loader />;
+    }
+
+    // Display an error message if the request fails
+    if (status === Status.ERROR && value !== null) {
+        return <Message type={MessageType.Error}>{error.message}</Message>;
+    }
+
+    // Display the list of users' emails if the data is loaded successfully
+    if (status === Status.SUCCESS && error !== null) {
+        return <List items={value} />;
+    }
+
+    return null;
+};
+
+const Container: FC = () => {
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <UserEmailList />
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUserEmailList />
+</ExampleWrapper>
+
+</ContentWrapper>

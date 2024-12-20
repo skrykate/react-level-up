@@ -1,0 +1,324 @@
+import { CaseAnalyticData } from './_features/case-analytic-data';
+import { CaseInteractiveLink } from './_features/case-interactive-link';
+import { CaseOnlineStatusBar } from './_features/case-online-status-bar';
+
+<ContentWrapper>
+## Explanation
+
+The `useEventListener` hook enables you to efficiently manage event listeners within React components, preventing memory leaks and unnecessary re-renders. It abstracts away the complexity of adding and removing event listeners to a target element, ensuring clean and concise code. By utilizing this hook, you can register event handlers for various types of events, such as mouse events, keyboard events, or custom events, on a specified element. This hook is particularly useful in scenarios where you need to handle user interactions, respond to browser events, or integrate third-party libraries requiring event handling.
+
+To use the `useEventListener` hook, you simply invoke it inside your component with the appropriate parameters: the event name, the event handler function, and optionally the target element.
+
+The `useEventListener` hook simplifies event handling in React applications, streamlines the debugging process, promotes better code organization, and enhances code maintainability.
+
+### Usage Cases
+
+-   **Interactive Elements**: Attach event listeners to global events (e.g., `scroll`, `resize`, `keydown`) or non-interactive elements, making them responsive to user actions.
+-   **Mouse Tracking**: Track mouse movements or gestures, useful for implementing interactive components like sliders or drag-and-drop functionality.
+-   **Keyboard Shortcuts**: Manage keyboard shortcuts to improve accessibility and enhance the user experience.
+-   **External API Integration**: Integrate event-based communication with external libraries or APIs, such as WebSocket connections or custom event systems.
+-   **Form Validation**: Handle `input` or `focus` events to validate form fields dynamically.
+-   **Lazy Loading**: Implement event listeners for `scroll` events, enabling features like lazy loading or infinite scrolling.
+-   **Custom Event Handling**: Encapsulate event-handling logic for reusable components, allowing for custom event flows in your application.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useEventListener = <
+    WEvent extends keyof WindowEventMap,
+    HEvent extends keyof HTMLElementEventMap,
+    DEvent extends keyof DocumentEventMap,
+    T extends HTMLElement = HTMLElement,
+    EventType extends
+        | WindowEventMap[WEvent]
+        | HTMLElementEventMap[HEvent]
+        | DocumentEventMap[DEvent] =
+        | WindowEventMap[WEvent]
+        | HTMLElementEventMap[HEvent]
+        | DocumentEventMap[DEvent],
+>(
+    eventName: WEvent | HEvent | DEvent,
+    handler: (event: EventType) => void,
+    element?: RefObject<T> | Document
+): void => {
+    // Create a `ref` that stores a reference to the latest `handler` function
+    const latestHandler = useRef(handler);
+
+    // Update `latestHandler.current` when the `handler` changes.
+    // This ensures our `useEffect` below always gets the latest handler without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the `handler` is created from scratch inside it
+
+    // `useLayoutEffect` is used here to guarantee that the event handler
+    // reference is updated before any subsequent renders or event handling take place.
+    // Since there's a possibility that when using `useEffect`, at a certain moment,
+    // the `handler` might become outdated. This is because `useEffect` is asynchronous:
+    // its code executes after the browser finishes rendering. Consequently,
+    // the handler will be updated after the browser's initial rendering.
+    // In contrast, `useLayoutEffect` is synchronous, ensuring that its code executes
+    // after all DOM mutations but before the browser updates the interface
+    useLayoutEffect(() => {
+        // Update `latestHandler` when the `handler` (its reference) changes
+        latestHandler.current = handler;
+    }, [handler]);
+    // By using `useRef` and `useLayoutEffect`, this technique eliminates the need
+    // to memoize the `handler` outside the hook (in the component) via `useCallback`.
+    // It abstracts the optimization logic inside the hook, making it more convenient
+
+    // Set up an effect to attach an event listener to the element
+    useEffect(
+        () => {
+            // Define the listening target
+            const targetElement: T | Document | Window =
+                element instanceof Document
+                    ? element
+                    : (element?.current ?? window);
+
+            // Check if `addEventListener` is supported
+            if (!('addEventListener' in targetElement)) return;
+
+            // Create an event listener that calls the `handler` function stored in the `ref`
+            const eventListener = (event: EventType): void => {
+                latestHandler.current(event);
+            };
+
+            // Add the event listener
+            targetElement.addEventListener(
+                eventName,
+                eventListener as EventListener
+            );
+
+            // Remove the event listener in the cleanup function to ensure proper cleanup
+            // and prevent memory leaks associated with the event listener
+            // added during the component's lifecycle.
+            // The cleanup function is triggered when the component unmounts or
+            // one of the dependencies changes
+            return () => {
+                targetElement.removeEventListener(
+                    eventName,
+                    eventListener as EventListener
+                );
+            };
+        },
+
+        // Include `eventName` and `element` in the dependency array to ensure the `useEffect` runs when they change.
+        // Although we use `latestHandler` inside `useEffect`, it's not necessary
+        // to include it in the dependencies array. `useEffect` knows that the reference to `latestHandler`
+        // doesn't change, so it won't re-run unless `eventName` and/or `element` change or the component unmounts
+        [eventName, element]
+    );
+};
+
+export default useEventListener;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Reference
+
+```tsx
+useEventListener(eventName, handler, element?)
+```
+
+To utilize the `useEventListener` hook in a component, simply call it within the component's function body during rendering.
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'eventName',
+                cells: [
+                    'WEvent | HEvent | DEvent',
+                    'Specifies the type of event to listen for (e.g., `click`, `mouseover`). It indicates the event that the handler function will respond to.',
+                ],
+            },
+            {
+                head: 'handler',
+                cells: [
+                    '(event: EventType) => void',
+                    'The event handler function that will be called when the specified event occurs.  It defines the behavior or action to be executed in response to the event.',
+                ],
+            },
+            {
+                head: 'element (optional)',
+                cells: [
+                    'RefObject<T> | Document',
+                    'Specifies the target element to which the event listener will be attached. It can be either a direct reference to a DOM element or a React `ref` object obtained using the `useRef` hook. If not provided, the event listener will be attached to the `window` object by default.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return values
+
+This hook doesn't return any value.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Tab Visibility Analytics
+
+This example demonstrates the use of the `useEventListener` hook to track tab visibility changes. The event listener is attached to the `document`, ensuring that visibility changes across the entire page are captured. With the `visibilityChangeHandler` function, analytics data is dispatched when the user switches tabs, leveraging the `visibilitychange` event. This approach facilitates comprehensive user engagement monitoring within web applications, as it covers all visibility alterations across the document.
+
+```tsx
+// Define function to handle the visibility change event, performing actions such as
+// sending analytics data when the user leaves or returns to the tab
+const visibilityChangeHandler = () => {
+    if (document.visibilityState === 'hidden') {
+        // Your logic to perform analytics data sending to the server
+        // when the user leaves the tab
+
+        console.log(
+            `You left the tab at ${new Date().toLocaleTimeString()} so analytic data was sent to the server.`
+        );
+    } else {
+        // Optionally, you can implement logic for sending analytics data
+        // to the server when the user returns to the tab
+        console.log(
+            `You returned to the tab at ${new Date().toLocaleTimeString()}.`
+        );
+    }
+};
+
+const url =
+    'https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event';
+
+const Tracker: FC = () => {
+    // Attach an event listener for the `visibilitychange` event to the document
+    useEventListener('visibilitychange', visibilityChangeHandler, document);
+
+    return (
+        <Layer title="Tracker">
+            <Text>
+                Go to another tab by <br />
+                <Link
+                    href={url}
+                    rel="noreferrer"
+                    target="_blank"
+                >
+                    visiting MDN
+                </Link>
+                , then come back and take a look at the console.
+            </Text>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseAnalyticData />
+</ExampleWrapper>
+
+### Click Tracking
+
+This example demonstrates click tracking functionality using the `useEventListener` hook, leveraging `useRef` to reference the link element. The `handleLinkClick` callback increments the click count stored in state. By attaching an event listener for the `click` event to the HTML element via `useRef` hook, interactions are monitored, and the click count is updated accordingly. This approach optimizes performance by efficiently managing event handling, enhancing the responsiveness of user interface elements within web applications.
+
+```tsx
+const id = 'example-div';
+
+const initialValue = 0;
+
+const Tracker: FC = () => {
+    const url = `#${id}`;
+
+    // Create a `ref` to store a reference to the link element
+    const linkRef = useRef<HTMLAnchorElement | null>(null);
+
+    // Initialize state to track the number of link clicks
+    const [linkClicks, setLinkClicks] = useState(initialValue);
+
+    const handleLinkClick = () => {
+        setLinkClicks((prevCount) => prevCount + 1);
+    };
+
+    // Attach an event listener for the `click` event to the link element,
+    // incrementing the click count when the link is clicked
+    useEventListener('click', handleLinkClick, linkRef);
+
+    return (
+        <Layer title="Tracker">
+            <Text>
+                Click this link:{' '}
+                <Link
+                    // Assigning the `ref` to the element, allowing it
+                    // to be tracked by the `useEventListener` hook
+                    ref={linkRef}
+                    href={url}
+                >
+                    Click Me!
+                </Link>
+            </Text>
+            <Message id={id}>You get here by clicking the link above.</Message>
+            <Text>Number of clicks: {linkClicks}</Text>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseInteractiveLink />
+</ExampleWrapper>
+
+### Internet Connection Status Monitoring
+
+This example showcases internet connection status monitoring using the `useEventListener` hook. The `handleOnline` and `handleOffline` callbacks toggle the `isOnline` state, reflecting the current internet connectivity. By attaching event listeners for the `online` and `offline` events directly to the `window`, changes in connection status are tracked. This setup allows for dynamic UI updates, such as enabling/disabling input fields and buttons based on the internet connection status, enhancing user experience in web applications.
+
+```tsx
+const Tracker: FC = () => {
+    // Initialize state to track the online/offline status
+    const [isOnline, setIsOffline] = useState(true);
+
+    // Define callback functions using `useCallback` to toggle the `isOnline` state
+    const handleOnline = useCallback(() => {
+        setIsOffline(true);
+    }, []);
+
+    const handleOffline = useCallback(() => {
+        setIsOffline(false);
+    }, []);
+
+    // Attach event listeners for the `online` and `offline` events to track
+    // changes in the internet connection status, updating the state of `isOnline` accordingly.
+    // Omit specifying an element to attach the handler directly to the window
+    useEventListener('online', handleOnline);
+    useEventListener('offline', handleOffline);
+
+    return (
+        <Layer title="Tracker">
+            <Text>
+                Internet status:{' '}
+                <span className={isOnline ? 'text-green-500' : 'text-red-500'}>
+                    {isOnline ? '✅ Connected' : '❌ Disconnected'}
+                </span>
+            </Text>
+
+            <div className="flex flex-col gap-2">
+                <Label>Important Message</Label>
+                {/* Input field will be disabled if the internet connection is lost */}
+                <Input disabled={!isOnline} />
+                <div className="flex w-full justify-center">
+                    {/* Button will be disabled if the internet connection is lost */}
+                    <Button disabled={!isOnline}>Save progress</Button>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseOnlineStatusBar />
+</ExampleWrapper>
+
+</ContentWrapper>

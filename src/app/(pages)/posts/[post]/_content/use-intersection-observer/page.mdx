@@ -1,0 +1,462 @@
+import { CaseAnimatedContainer } from './_features/case-animated-container';
+import { CaseTodoList } from './_features/case-todo-list';
+import { CaseLazyImage } from './_features/case-lazy-image';
+
+<ContentWrapper>
+## Explanation
+
+The custom hook `useIntersectionObserver` facilitates the observation of element visibility in React components through the `IntersectionObserver` API. It not only detects when a specified DOM element enters or exits the viewport but also maintains a state variable `isIntersecting`, reflecting the current visibility status of the target element. This state variable allows React components to respond dynamically to changes in element visibility, enabling the execution of tailored actions based on whether the element is intersecting with the viewport or not.
+
+Additionally, `useIntersectionObserver` supports an optional callback parameter, allowing developers to define custom logic to be executed precisely when the target element becomes intersecting. This callback function, if provided, serves as a flexible mechanism for triggering specific behaviors or side effects in response to element visibility changes. Whether it's prefetching content, loading additional data, or animating elements, the callback empowers developers to implement a wide range of dynamic interactions seamlessly within their React applications.
+
+Furthermore, `useIntersectionObserver` offers flexibility through the optional parameter `options`, which enables customization of the Intersection Observer's behavior. Developers can pass various options supported by the Intersection Observer API, such as the `threshold` to specify at what percentage of visibility the callback should be triggered or `rootMargin` to define the margins around the root element for intersection calculations. This level of configurability empowers developers to fine-tune the intersection detection process according to their specific use cases, ensuring optimal performance and responsiveness in their React applications.
+
+With its ability to encapsulate intersection observation logic, manage visibility state, and offer customizable callback functionality, `useIntersectionObserver` streamlines the development of responsive and interactive user interfaces in React. Its versatility and ease of use make it an invaluable tool for enhancing user experience and optimizing performance across various web applications and components.
+
+### Usage Cases
+
+-   **Lazy Loading of Images**: Automatically load images as they come into the viewport, improving initial load time and conserving bandwidth.
+-   **Infinite Scrolling**: Dynamically load more content (e.g., blog posts, comments) as the user scrolls to the bottom of a list, enhancing the user experience by avoiding page reloads.
+-   **Animations on Scroll**: Trigger animations or transitions when an element enters the viewport, creating engaging visual effects as users scroll through the page.
+-   **Prefetching Data**: Preload data or resources when an element is about to come into view, ensuring smoother and faster interactions once the user reaches that part of the page.
+-   **Sticky Headers**: Activate sticky headers or elements when they intersect with the top of the viewport, providing contextual information or navigation aids as users scroll.
+-   **Tracking Element Visibility**: Monitor the visibility of key elements (e.g., ads, call-to-action buttons) to gather analytics data on user engagement and interaction with these elements.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+type UseIntersectionObserverArgs<T> = {
+    element: RefObject<T>;
+    callback?: () => void;
+    parentElement?: RefObject<T | null> | Document;
+    rootMargin?: string;
+    threshold?: number | number[];
+};
+
+const useIntersectionObserver = <T extends HTMLElement>({
+    element,
+    callback,
+    parentElement,
+    rootMargin = '0%',
+    threshold = 0,
+}: UseIntersectionObserverArgs<T>): [boolean, () => void] => {
+    // Initialize the state to keep track of whether the target element is intersecting
+    const [isIntersecting, setIsIntersecting] = useState(false);
+
+    // Create a `ref` to store the `IntersectionObserver` instance
+    const observerRef = useRef<IntersectionObserver | null>(null);
+
+    // Create a `ref` to store the latest callback function if provided
+    const latestCallback = useRef(callback ?? null);
+
+    // Update `latestCallback.current` when the callback changes.
+    // This ensures our `useEffect` below always gets the latest callback without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the callback is created from scratch inside it
+
+    // `useLayoutEffect` is used here to guarantee that the callback
+    // reference is updated before any subsequent renders or event handling take place.
+    // Since there's a possibility that when using `useEffect`, at a certain moment,
+    // the callback might become outdated. This is because `useEffect` is asynchronous:
+    // its code executes after the browser finishes rendering. Consequently,
+    // the callback will be updated after the browser's initial rendering.
+    // In contrast, `useLayoutEffect` is synchronous, ensuring that its code executes
+    // after all DOM mutations but before the browser updates the interface
+    useLayoutEffect(() => {
+        // Check if `callback` provided
+        if (callback) {
+            // Update `latestCallback` when the `callback` (its reference) changes
+            latestCallback.current = callback;
+        }
+    }, [callback]);
+    // By using `useRef` and `useLayoutEffect`, this technique eliminates the need
+    // to memoize the callback function outside the hook (in the component) via `useCallback`.
+    // It abstracts the optimization logic inside the hook, making it more convenient
+
+    // Create a function to stop observing the target element.
+    // Using `unobserve` method stops observing only the specified element,
+    // allowing the observer to potentially observe other elements
+    const unobserve = () => {
+        // If the observer is active and the target element exists, stop observing the element
+        if (observerRef.current && element.current) {
+            observerRef.current.unobserve(element.current);
+        }
+    };
+
+    // Alternative using `disconnect`, which stops observing all elements
+    // const unobserve = () => {
+    //     if (observerRef.current) {
+    //         observerRef.current.disconnect();
+    //     }
+    // };
+
+    useEffect(() => {
+        // Ensure we have a valid `ref` to observe and the browser supports the `IntersectionObserver` API
+        if (!element.current || !('IntersectionObserver' in window)) return;
+
+        // Define the root element for the `IntersectionObserver` based on the `parentElement` prop
+        const root: Element | Document | null = parentElement
+            ? // First of all check if `parentElement` is provided
+              parentElement instanceof Document
+                ? // If `parentElement` is provided and it's an instance of `Document`, use it as the root
+                  parentElement
+                : // If `parentElement` is provided and it's a `ref` object, use its current property as the root
+                  parentElement?.current
+            : // If not provided, `root` will be null, meaning the viewport will be used as the root
+              null;
+
+        // Create the options object for the `IntersectionObserver`
+        const finalOptions = { threshold, root, rootMargin };
+
+        // Try to create the `IntersectionObserver` instance
+        try {
+            observerRef.current = new IntersectionObserver(([entry]) => {
+                // Update the `isIntersecting` state
+                setIsIntersecting(entry.isIntersecting);
+
+                // Call the latest callback if provided when the target element is intersecting
+                if (entry.isIntersecting && latestCallback.current) {
+                    latestCallback.current();
+                }
+            }, finalOptions);
+        } catch (error) {
+            // Handle `IntersectionObserver` creation error
+            console.error('Error creating `IntersectionObserver`:', error);
+
+            // In this example it just logs the error to the console.
+            // Additional error handling logic can be added here as needed
+        }
+
+        // Start observing the element if both `element.current` and `observerRef.current` are defined.
+        // `element.current` ensures that the DOM element is available to observe.
+        // `observerRef.current` ensures that the `IntersectionObserver` instance is successfully created
+        if (element.current && observerRef.current) {
+            observerRef.current.observe(element.current);
+        }
+
+        // Cleanup function to disconnect the observer when the component unmounts
+        // or one of the dependencies changes
+        return () => {
+            // The check for `observerRef.current` ensures that the `IntersectionObserver`
+            // instance exists before attempting to disconnect it
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+        };
+    }, [element, threshold, parentElement, rootMargin]); // Re-run `useEffect` only when any of these values change
+
+    return [isIntersecting, unobserve];
+};
+
+export default useIntersectionObserver;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const [isIntersecting, unobserve] = useIntersectionObserver({
+    element, callback?, parentElement?, rootMargin?, threshold?,
+});
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'element',
+                cells: [
+                    'RefObject<T>',
+                    'A reference to the DOM element whose visibility needs to be observed.',
+                ],
+            },
+            {
+                head: 'callback (optional)',
+                cells: [
+                    '() => void',
+                    'An optional callback function invoked when the element intersects.',
+                ],
+            },
+            {
+                head: 'parentElement (optional)',
+                cells: [
+                    'RefObject<T | null> | Document',
+                    'An optional reference to the parent element or Document object.',
+                ],
+            },
+            {
+                head: 'rootMargin (optional)',
+                cells: [
+                    'string',
+                    'An optional value specifying the margins around the root element for the observer.',
+                ],
+            },
+            {
+                head: 'threshold (optional)',
+                cells: [
+                    'number | number[]',
+                    `An optional value representing the percentage of the target's visibility required to trigger the observer's callback.`,
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'isIntersecting',
+                cells: [
+                    'boolean',
+                    'The state indicating whether the element intersects with the visible area.',
+                ],
+            },
+            {
+                head: 'unobserve',
+                cells: [
+                    '() => void',
+                    'A function to stop observing the element.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Lazy Loading of an Image in an Article
+
+This example demonstrates how to use the `useIntersectionObserver` hook for lazy loading. The hook monitors the visibility of a target element (`LazyImage`), and when it enters the viewport, it simulates the loading of a heavy image (represented by the `Square` component). This approach improves performance by deferring content loading until it becomes visible to the user.
+
+```tsx
+const LazyImage: FC = () => {
+    // Create a `ref` to observe the visibility of the target element
+    const targetRef = useRef<HTMLDivElement | null>(null);
+
+    // Use a custom hook to track if the target element is visible in the viewport
+    const [isIntersecting, unobserve] = useIntersectionObserver({
+        element: targetRef,
+    });
+
+    // Stop observing once the element becomes visible, as the content is now loaded
+    if (isIntersecting) {
+        unobserve();
+    }
+
+    return (
+        <div ref={targetRef}>
+            {isIntersecting ? (
+                // Display the "loaded" content if visible
+                <Square colored>
+                    <Shapes className="h-20 w-20" />
+                </Square>
+            ) : (
+                // Otherwise, show a loader
+                <Loader />
+            )}
+        </div>
+    );
+};
+
+const Scrollable: FC = () => {
+    return (
+        <Layer title="Scrollable">
+            <div className="relative border-y-4 border-neutral-900 dark:border-neutral-100">
+                <div className="flex h-80 flex-col space-y-2 overflow-y-auto p-4">
+                    <Article />
+                    <LazyImage />
+                    <Article />
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseLazyImage />
+</ExampleWrapper>
+
+### Animated Component
+
+This example demonstrates how to use the `useIntersectionObserver` hook to conditionally render an animated component. The hook tracks the visibility of a target element (`AnimatedComponent`) and renders the `Loader` animation only when the element enters the viewport. This approach optimizes rendering by ensuring the animation is displayed only when it's needed, enhancing both performance and user experience.
+
+```tsx
+const AnimatedComponent: FC = () => {
+    // Create a `ref` to observe the visibility of the target element
+    const targetRef = useRef<HTMLDivElement | null>(null);
+
+    // Use a custom hook to track if the target element is visible in the viewport
+    const [isIntersecting] = useIntersectionObserver({
+        element: targetRef,
+    });
+
+    return (
+        <div
+            ref={targetRef}
+            className="flex h-40 w-full items-center justify-center"
+        >
+            {isIntersecting && (
+                // Render the animation (`Loader`) only when the target element is visible in the viewport
+                <Loader />
+            )}
+        </div>
+    );
+};
+
+const Scrollable: FC = () => {
+    return (
+        <Layer title="Scrollable">
+            <div className="relative border-y-4 border-neutral-900 dark:border-neutral-100">
+                <div className="flex h-80 flex-col space-y-2 overflow-y-auto p-4">
+                    <Article />
+                    <AnimatedComponent />
+                    <Article />
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseAnimatedContainer />
+</ExampleWrapper>
+
+### Infinite Scrolling Todo List
+
+This example demonstrates how to use the `useIntersectionObserver` hook to implement infinite scrolling with paginated data fetching. A target element is monitored for intersection within a scrollable parent container. When the target enters the viewport, the `fetchTodos` function is triggered to load the next batch of todos from an API. The fetched items are appended to the existing list, and a loader is displayed during data fetching. Once the final page is reached, the observation stops, preventing further requests. This approach ensures seamless data loading as the user scrolls, enhancing performance and user experience.
+
+```tsx
+type Todo = {
+    id: string;
+    title: string;
+};
+
+type FetchTodosArgs = {
+    onSuccess: (nextTodos: IItems) => void;
+    params: { page: number };
+};
+
+const initialPage = 1;
+
+const lastPage = 22;
+
+// Create a function to fetch todos from the API
+const fetchTodos = ({ onSuccess, params }: FetchTodosArgs) => {
+    const { page } = params;
+
+    console.log('fetchTodos');
+
+    fetch(`https://jsonplaceholder.typicode.com/todos?_limit=10&_page=${page}`)
+        .then((response) => response.json())
+        .then((json) => {
+            const nextTodos: IItems = json.map((todo: Todo) => ({
+                id: todo.id,
+                name: `${todo.id}. ${todo.title}`,
+            }));
+
+            onSuccess(nextTodos);
+        })
+        .catch((error) => {
+            console.error('Error fetching todos:', error);
+            // In this example it just logs the error to the console.
+            // Additional error handling logic can be added here as needed
+        });
+};
+
+const Scrollable: FC = () => {
+    // Initialize states to store the todos
+    const [todos, setTodos] = useState<IItems>([]);
+
+    // Initialize states to store the current page number
+    const [page, setPage] = useState(initialPage);
+
+    // Create `ref` for the parent container
+    const parentRef = useRef<HTMLDivElement | null>(null);
+
+    // Create `ref` for the target element
+    const targetRef = useRef<HTMLDivElement | null>(null);
+
+    // Create a function to handle successful fetching of new todos.
+    // Use `useCallback` to memoize the function to prevent unnecessary re-creations on re-renders
+    const onSuccess = useCallback((newTodos: IItems) => {
+        // Update `todos` state
+        setTodos((prev) => [...prev, ...newTodos]);
+
+        // Increment page number for next fetching
+        setPage((prev) => prev + 1);
+    }, []);
+
+    // Use the custom hook to observe the target element's visibility,
+    // passing `parentElement` and `callback` as arguments to fetch more todos
+    // when the target element is intersecting
+    const [isIntersecting, unobserve] = useIntersectionObserver({
+        element: targetRef,
+        callback: () => {
+            if (page === lastPage) {
+                unobserve();
+                return;
+            }
+
+            fetchTodos({
+                onSuccess,
+                params: {
+                    page,
+                },
+            });
+        },
+        parentElement: parentRef,
+        // Intersection threshold for triggering the loading of the next batch of tasks.
+        // This value means fetching will start when 30% of the target element becomes visible
+        threshold: 0.3,
+    });
+
+    return (
+        <Layer title="Scrollable">
+            <div className="relative border-y-4 border-neutral-900 dark:border-neutral-100">
+                <div
+                    ref={parentRef}
+                    className="flex h-80 flex-col space-y-2 overflow-y-auto p-4"
+                >
+                    <List items={todos} />
+                    {/* Invisible target element for intersection observation */}
+                    <div
+                        ref={targetRef}
+                        className="invisible"
+                    />
+                    {/* Conditionally display a loader when the target element is intersecting */}
+                    {isIntersecting && page !== lastPage && (
+                        <div className="flex w-full items-center justify-center">
+                            <Loader />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseTodoList />
+</ExampleWrapper>
+
+</ContentWrapper>

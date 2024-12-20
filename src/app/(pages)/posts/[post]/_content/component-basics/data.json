@@ -1,0 +1,9 @@
+{
+    "title": "Component Basics",
+    "description": "Understand the essentials of React components! Learn the advantages of Functional components over Class components, strategies for managing component size, and best practices for organizing code for readability and maintainability.",
+    "section": "best practices",
+    "last_updated_date": "06.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "title": "useIntersectionObserver( )",
+    "description": "The `useIntersectionObserver` hook facilitates tracking the visibility of a specified DOM element using the Intersection Observer API. In this article, you'll find practical code implementations and real-world use cases, demonstrating how the custom hook can be applied in various scenarios. We'll break down the process of creating the hook, explain its key features, and provide a detailed explanation to help you understand its functionality and use.",
+    "section": "custom hooks",
+    "last_updated_date": "30.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

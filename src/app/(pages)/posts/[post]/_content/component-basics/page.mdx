@@ -1,0 +1,197 @@
+<ContentWrapper>
+
+## Coordinated components
+
+It's efficient to adhere to a single style when creating components. Auxiliary functions should be logically grouped together, use the same export method (default or named), and follow a unified approach to component naming. Each export method has its own advantages and disadvantages, but it's crucial to choose one and stick to it.
+
+Whether components are exported at the end of the file or where they're defined is less important than maintaining a consistent rule. This fosters code consistency and makes maintenance easier.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Named Exports
+
+In the world of frontend development, especially when working with React, the proper structure and organization of code play a crucial role in project maintainability and readability. One aspect that deserves special attention is the choice between named exports and default exports for components. Let's explore why named exports are often preferred, even when each component resides in its own file.
+
+### Exporting Components
+
+For a named export, a component is declared and exported as follows:
+
+```tsx
+export const NamedExportComponent: FC = () => {
+    return <div>Content</div>;
+};
+```
+
+For a default export, the component is declared like this:
+
+```tsx
+const DefaultExportComponent: FC = () => {
+    return <div>Content</div>;
+};
+
+export default DefaultExportComponent;
+```
+
+### Importing Components
+
+Importing a named component involves specifying its name within curly braces:
+
+```tsx
+import { NamedExportComponent } from '@/components/named-export-component/NamedExportComponent';
+```
+
+For importing a default-exported component, you use syntax without curly braces:
+
+```tsx
+import DefaultExportComponent from '@/components/default-export-component/DefaultExportComponent';
+```
+
+### Advantages
+
+-   **Refactoring Convenience and Automatic Imports:** Named exports facilitate easier refactoring and automatic imports. Modern development tools such as ESLint, TypeScript, and integrated development environments (e.g., Visual Studio Code) provide robust support for named exports. When a component's name changes, these tools can automatically update all imports throughout the project, simplifying the refactoring process.
+-   **Clarity and Readability of Code:** Named exports make the code more explicit. When importing a component, its name is explicitly stated at the import location. In contrast, default-exported components might accidentally be imported under a different name, which can decrease code readability. Using named exports ensures that each component is consistently exported under its own name, improving code readability and understanding.
+-   **Consistency and Name Conflict Prevention:** Named exports also contribute to code consistency. Using a unified approach for all components simplifies code maintenance and prevents confusion. When all components are exported in the same manner, it makes the code more predictable and easier for other developers to understand. The likelihood of errors and name conflicts decreases because each name must be unique within the file. Importing cannot accidentally use the same name for different components, which helps avoid situations where the same name is used for different entities.
+-   **Enhanced Tooling Support:** Code analysis tools and compilers such as ESLint and TypeScript work better with named exports. They can more accurately analyze the code and provide useful warnings and optimizations.
+-   **Renaming Capability on Import:** With named exports, there's the flexibility to rename a component explicitly during import, which can be particularly useful in large projects where name conflicts might arise.
+
+```tsx
+import { NamedExportComponent as RenamedComponent } from '@/components/named-export-component/NamedExportComponent';
+```
+
+In conclusion, named exports in React development offer numerous advantages, even when each component is in its own file. This approach makes the code more maintainable and convenient for the entire team, which is especially crucial in large and long-term projects.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Functional Components
+
+Functional components in React are becoming increasingly preferred by developers because of their simpler syntax. Unlike class components, they don't require a constructor or lifecycle methods, which significantly reduces the amount of code written and makes them easier to understand. Functional components allow implementing the same logic as class components but with less effort and more straightforward code.
+
+Simplifying the mental model of the code that developers need to maintain also contributes to increased productivity and reduced errors, especially in large projects. Code readability and maintainability are significantly improved, making functional components particularly valuable in team-based development.
+
+### Example of a Class Component
+
+Class components often contain a lot of boilerplate code that complicates their understanding and maintenance. For example, the following code demonstrates a typical class component with a constructor. If additional logic and lifecycle methods are added, its complexity will significantly increase.
+
+```tsx
+interface State {
+    iceCreams: number;
+}
+
+class IceCreamCounter extends Component<Record<string, never>, State> {
+    state: State = {
+        iceCreams: 0,
+    };
+
+    addIceCream = (): void => {
+        this.setState({
+            iceCreams: this.state.iceCreams + 1,
+        });
+    };
+
+    render(): JSX.Element {
+        return (
+            <div>
+                <span>Ice Creams: {this.state.iceCreams}</span>
+                <button onClick={this.addIceCream}>Add Ice Cream</button>
+            </div>
+        );
+    }
+}
+```
+
+### Example of a Functional Component
+
+Functional components, unlike class components, offer a more concise and understandable way of writing code. With the use of hooks, functional components become powerful and flexible. For instance, creating a component like `IceCreamCounter` as a functional component using the `useState` hook looks like this:
+
+```tsx
+const IceCreamCounter: FC = () => {
+    const [iceCreams, setIceCreams] = useState(0);
+
+    const handleAddIceCream = () => {
+        setIceCreams((prev) => prev + 1);
+    };
+
+    return (
+        <div>
+            <span>Ice Creams: {iceCreams}</span>
+            <button onClick={handleAddIceCream}>Add Ice Cream</button>
+        </div>
+    );
+};
+```
+
+The use of functional components in modern React applications is becoming increasingly common due to their simplicity and efficiency. They allow developers to focus on the core logic of the application, minimizing redundant code and simplifying the development and maintenance process. Functional components aren't just a trend; they're an important tool in the arsenal of a modern React developer, enhancing code readability, maintainability, and overall efficiency.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Component Size
+
+A functional component in React is a function that takes props and returns markup. They adhere to the same design principles as regular functions.
+
+If a function performs multiple tasks, it's recommended to extract some of its logic into separate functions. Similarly, if a component has complex functionality, it should be divided into smaller components.
+
+When markup becomes complex, containing loops or cumbersome conditions, extracting parts of it into separate components is good practice. Breaking down complex logic into smaller components enhances code readability and maintainability.
+
+Relying on props and callbacks for interaction and data retrieval is an effective approach because it promotes code maintainability and modularity. It's important to remember that the number of lines of code doesn't always reflect its quality; it's more crucial to consider responsiveness and abstraction levels to ensure that a component is easily readable and maintainable.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Organizing Helper Function
+
+Efficient code organization in React components is crucial for improving readability and maintaining projects. One key principle is to minimize the number of helper functions inside components. That is, functions that don't need access to data stored within the component should be placed outside of it, typically before the component definition. This placement simplifies code comprehension by allowing it to be read from top to bottom. Functions that do use data from component state or props can also be placed outside the component.
+
+This approach aligns with the principle of pure functions because they lack "noise". Adhering to the creation of pure functions makes it easier to track errors and extend the component.
+
+### Example
+
+Incorrect placement of a helper function, which should be avoided:
+
+```tsx
+interface ComponentProps {
+    initialValue: number;
+}
+
+const Component: FC<ComponentProps> = ({ initialValue }) => {
+    const calculateValue = () => {
+        return initialValue ** 2;
+    };
+
+    const value = calculateValue();
+
+    return <div>{value}</div>;
+};
+```
+
+In this example, the `calculateValue` function is declared inside the component and reads the value from the `initialValue` prop. This placement increases "noise" in the component, making it harder to understand, test, and debug.
+
+Correct placement of a helper function:
+
+```tsx
+const calculateValue = (initialValue: number) => {
+    return initialValue ** 2;
+};
+
+interface ComponentProps {
+    initialValue: number;
+}
+
+const Component: FC<ComponentProps> = ({ initialValue }) => {
+    const value = calculateValue(initialValue);
+
+    return <div>{value}</div>;
+};
+```
+
+In this corrected version, the `calculateValue` function is declared outside the component. Instead of directly accessing the `initialValue` prop, it takes it as an argument and processes it according to the same logic, returning the same result. Thus, this placement reduces "noise" and makes the component more concise and understandable.
+
+By placing helper functions outside the component and passing them necessary values (such as state, props, and other reactive variables) as arguments, you can achieve cleaner code. Following this recommendation makes the code more maintainable, simplifies debugging, and facilitates testing.
+
+</ContentWrapper>

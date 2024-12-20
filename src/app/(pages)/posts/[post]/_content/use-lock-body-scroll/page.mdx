@@ -1,0 +1,220 @@
+import { CaseModal } from './_features/case-modal';
+import { CaseHamburgerMenu } from './_features/case-hamburger-menu';
+
+<ContentWrapper>
+## Explanation
+
+The custom hook `useLockBodyScroll` provides a convenient solution for managing scroll behavior within React components, ensuring a smoother user experience. By preventing page scrolling when a specific component is mounted, this hook helps maintain user focus and context.
+
+Use cases for this hook include scenarios where developers need to display modal dialogs, pop-up notifications, or other overlays that require immediate user attention. By temporarily locking the page scroll, developers ensure that users remain engaged with the displayed content, minimizing distractions and potential confusion.
+
+Moreover, the use of `useLockBodyScroll` contributes to improved accessibility, particularly for users with disabilities who rely on keyboard navigation or screen readers. By preventing accidental navigation away from important UI elements, developers can create a more inclusive and user-friendly experience for all users.
+
+In summary, `useLockBodyScroll` simplifies scroll control within React components, reducing redundant code and errors while enhancing the end-user experience. Its seamless integration enriches development workflows and contributes to the creation of more accessible and intuitive applications.
+
+### Usage Cases
+
+-   **Modal Components**: Prevent page scrolling when displaying modal dialogs or pop-up overlays to maintain user focus and prevent distractions.
+-   **Dropdown Menus**: Ensure a seamless user experience by locking page scrolling when dropdown menus are open, allowing users to interact with menu options without interference.
+-   **Mobile Navigation**: Enhance mobile navigation menus by preventing background scrolling when the menu is open, providing smoother navigation and improving usability.
+-   **Fullscreen Views**: Implement fullscreen views or slideshows with locked scrolling to create immersive experiences without distractions from page scrolling.
+-   **Interactive Widgets**: Improve the usability of interactive widgets, such as calendars or sliders, by preventing unintended scrolling while users interact with the widget's controls.
+-   **Scrollable Content**: Temporarily disable page scrolling when displaying content that requires user attention, such as tutorials or walkthroughs, ensuring users can focus on the content without interruptions.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useLockBodyScroll = (): void => {
+    // If it's crucial to lock the scroll as early as possible,
+    // you can consider using `useLayoutEffect` instead of `useEffect`.
+    // `useLayoutEffect` fires synchronously after all DOM mutations
+    // but before the browser updates the screen.
+    // It ensures that any layout effects are applied
+    // before the user sees the changes on the screen
+    useEffect(() => {
+        // Get the current window overflow value
+        const originalStyle: string = window.getComputedStyle(
+            document.body
+        ).overflow;
+
+        // Disable scrolling on the document body on mount
+        document.body.style.overflow = 'hidden';
+
+        // Return a cleanup function to enable scrolling when the component unmounts
+        return () => {
+            document.body.style.overflow = originalStyle || '';
+        };
+    }, []); // The dependency array is empty, so this `useEffect` runs only once on component mount
+};
+
+export default useLockBodyScroll;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+useLockBodyScroll();
+```
+
+To utilize the `useLockBodyScroll` hook in a component, simply call it within the component's function body during rendering.
+
+### Parameters
+
+This hook doesn't accept any parameters.
+
+### Return Values
+
+This hook doesn't return any value.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Scrollable Menu
+
+This example demonstrates the use of the `useLockBodyScroll` custom hook to prevent page scrolling when the menu is open. The menu itself is scrollable, but the page scroll remains locked to enhance the user experience. This approach ensures that users aren't distracted by two conflicting scroll behaviors when the menu is visible, creating a smoother and more intuitive interaction.
+
+```tsx
+const menuItems = loadData(20);
+
+const Menu: FC = () => {
+    // Call the hook to prevent page scrolling
+    // when the component is mounted
+    useLockBodyScroll();
+
+    const handleClick = () => {};
+
+    return (
+        <div className="absolute -top-2 left-14 w-40 p-2">
+            <List
+                items={menuItems}
+                scrollable
+                onClick={handleClick}
+            />
+        </div>
+    );
+};
+
+const KEY_CLOSE = 'Escape';
+
+const Container: FC = () => {
+    // State to track whether the menu is open or not
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Function to handle button click to toggle menu visibility
+    const handleToggle = () => {
+        // Toggle the `isOpen` state to the opposite value
+        setIsOpen((prev) => !prev);
+    };
+
+    // Function to handle closing the menu
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    // Call the `useKeyPress` hook to handle the `Escape` key press and close the modal
+    useKeyPress(KEY_CLOSE, handleClose);
+
+    return (
+        <Layer title="Container">
+            <div className="flex items-center justify-center">
+                <div className="relative w-14">
+                    <button
+                        onClick={handleToggle}
+                        className="rlu__focus relative flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500 text-white"
+                    >
+                        {/* Render a hamburger or close icon based on `isOpen` state */}
+                        {isOpen ? <IconClose /> : <IconOpen />}
+                    </button>
+                    {/* Conditional rendering of menu based on `isOpen` state */}
+                    {isOpen && <Menu />}
+                </div>
+            </div>
+            <Message>
+                <span>
+                    After opening the menu, you can press the following key on
+                    your keyboard to close it:
+                </span>
+                <Kbd id={KEY_CLOSE} />
+            </Message>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseHamburgerMenu />
+</ExampleWrapper>
+
+### Modal with Body Scroll Lock
+
+This example demonstrates the use of the `useLockBodyScroll` custom hook alongside a modal component. The hook is applied to prevent page scrolling when the modal is open, ensuring a more focused and uninterrupted experience for the user.
+
+```tsx
+interface ModalProps {
+    onClose: () => void;
+}
+
+const KEY_CLOSE = 'Escape';
+
+const ModalWrapper: FC<ModalProps> = ({ onClose: handleClose }) => {
+    // Call the `useLockBodyScroll` hook to prevent page scrolling when the component is mounted
+    useLockBodyScroll();
+
+    // Call the `useKeyPress` hook to handle the `Escape` key press and close the modal
+    useKeyPress(KEY_CLOSE, handleClose);
+
+    return (
+        <Modal>
+            <Message>
+                <span>
+                    Press the following key on your keyboard to close the modal
+                    window:
+                </span>
+                <Kbd id={KEY_CLOSE} />
+                <span>Or click the following button:</span>
+            </Message>
+            <Button onClick={handleClose}>Close Modal</Button>
+        </Modal>
+    );
+};
+
+const Container: FC = () => {
+    // State to track whether the modal is open or not
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Function to handle closing the modal
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    // Function to handle opening the modal
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <Button onClick={handleOpen}>Open Modal</Button>
+            </div>
+            {/* Conditional rendering of modal based on `isOpen` state  */}
+            {isOpen && <ModalWrapper onClose={handleClose} />}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseModal />
+</ExampleWrapper>
+
+</ContentWrapper>

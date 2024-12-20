@@ -1,0 +1,131 @@
+{
+    "data": {
+        "best-practices": {
+            "description": "Master the art of writing clean, efficient, and maintainable React code with these best practices. From component fundamentals to advanced state management and performance optimization, this section will guide you through building reliable applications with ease.",
+            "posts": [
+                {
+                    "id": "component-basics",
+                    "title": "Components Basics"
+                },
+                {
+                    "id": "component-markup",
+                    "title": "Component Markup"
+                },
+                {
+                    "id": "component-props",
+                    "title": "Component Props"
+                },
+                {
+                    "id": "component-mental-models",
+                    "title": "Component Mental Models"
+                },
+                {
+                    "id": "hooks-vs-hoc-and-render-props",
+                    "title": "Hooks vs HOCs and Render Props"
+                },
+                {
+                    "id": "state-management-using-reducers",
+                    "title": "State Management Using Reducers"
+                },
+                {
+                    "id": "application-structure",
+                    "title": "Application Structure"
+                },
+                {
+                    "id": "no-use-effect-no-bugs",
+                    "title": "No useEffect — No bugs"
+                },
+                {
+                    "id": "perfomance",
+                    "title": "Performance"
+                }
+            ]
+        },
+        "common-mistakes": {
+            "description": "Avoid the pitfalls that can slow down your React development. The articles in this section highlight frequent mistakes, from inefficient prop management to improper use of `useEffect`, and show you how to fix them for better, cleaner code.",
+            "posts": [
+                {
+                    "id": "using-prop-drilling",
+                    "title": "Using Prop Drilling"
+                },
+                {
+                    "id": "ineffective-access-to-component-props",
+                    "title": "Ineffective Access to Component Props"
+                },
+                {
+                    "id": "ui-components-doing-too-much",
+                    "title": "UI Components Doing Too Much"
+                },
+                {
+                    "id": "incorrect-usage-of-use-effect",
+                    "title": "Incorrect Usage of useEffect"
+                },
+                {
+                    "id": "repeated-calculations-on-re-renders",
+                    "title": "Repeated Calculations on Re-Renders"
+                },
+                {
+                    "id": "incorrect-usage-of-logical-operators",
+                    "title": "Incorrect Usage of Logical Operators"
+                }
+            ]
+        },
+        "custom-hooks": {
+            "description": "Enhance your React projects with reusable and powerful custom hooks. From handling async operations to managing local storage and media queries, these hooks simplify complex functionality and make your code more elegant.",
+            "posts": [
+                {
+                    "id": "use-async",
+                    "title": "useAsync( )"
+                },
+                {
+                    "id": "use-event-listener",
+                    "title": "useEventListener( )"
+                },
+                {
+                    "id": "use-fetch",
+                    "title": "useFetch( )"
+                },
+                {
+                    "id": "use-hover",
+                    "title": "useHover( )"
+                },
+                {
+                    "id": "use-intersection-observer",
+                    "title": "useIntersectionObserver( )"
+                },
+                {
+                    "id": "use-key-press",
+                    "title": "useKeyPress( )"
+                },
+                {
+                    "id": "use-latest",
+                    "title": "useLatest( )"
+                },
+                {
+                    "id": "use-local-storage",
+                    "title": "useLocalStorage( )"
+                },
+                {
+                    "id": "use-lock-body-scroll",
+                    "title": "useLockBodyScroll( )"
+                },
+                {
+                    "id": "use-match-media",
+                    "title": "useMatchMedia( )"
+                },
+                {
+                    "id": "use-toggle",
+                    "title": "useToggle( )"
+                },
+                {
+                    "id": "use-on-click-outside",
+                    "title": "useOnClickOutside( )"
+                },
+                {
+                    "id": "use-previous",
+                    "title": "usePrevious( )"
+                }
+            ]
+        }
+    }
+}

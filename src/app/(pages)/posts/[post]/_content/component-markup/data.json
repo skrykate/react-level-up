@@ -1,0 +1,9 @@
+{
+    "title": "Component Markup",
+    "description": "Enhance your React markup skills! Compare dynamic and static rendering, learn to optimize lists with reusable components, and explore techniques like children props and conditional rendering to improve code structure and maintainability.",
+    "section": "best practices",
+    "last_updated_date": "10.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

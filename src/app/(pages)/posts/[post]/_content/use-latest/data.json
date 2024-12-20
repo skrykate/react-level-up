@@ -1,0 +1,9 @@
+{
+    "title": "useLatest( )",
+    "description": "The `useLatest` hook provides a reliable way to keep a reference to the most recent value, ensuring it updates without causing unnecessary re-renders. In this article, you'll find practical code implementations and real-world use cases, demonstrating how the custom hook can be applied in various scenarios. We'll break down the process of creating the hook, explain its key features, and provide a detailed explanation to help you understand its functionality and use.",
+    "section": "custom hooks",
+    "last_updated_date": "04.07.24",
+    "flags": {
+        "showCodeNotice": false
+    }
+}

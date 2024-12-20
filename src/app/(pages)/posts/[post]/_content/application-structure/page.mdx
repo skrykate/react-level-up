@@ -1,0 +1,147 @@
+<ContentWrapper>
+
+## Absolute Paths
+
+Different parts of an application should be as easily modifiable as possible. This applies not only to the component code itself but also to its location. Absolute paths ensure that you don't need to change anything when moving an imported component to another location. It also simplifies determining the component's location.
+
+### Example
+
+Relative Path:
+
+```tsx
+import Button from '../../../components/ui/button';
+```
+
+Absolute Path:
+
+```tsx
+import Button from '@/components/ui/button';
+```
+
+Here, "@" is used as an indicator of an internal module, though the tilde "~" symbol is also encountered.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## One Component — One Directory
+
+Effectively organizing a project involves adhering to the principle of "One Component — One Directory". Each component in the application should have its own directory, ensuring better scalability and maintainability of the code. Begin by creating the component itself, and if additional files are needed, such as styles or tests, they should also reside within this directory.
+
+A good practice is to include an `index.ts` file for re-exporting the component. This significantly reduces import paths and eliminates redundancy in component names. For instance, the following example demonstrates what to **avoid**:
+
+```tsx
+import Navbar from '@/components/widgets/Navbar';
+```
+
+However, it's not recommended to place the component's code directly into the `index.ts` file, as this complicates searching for the component by name in the code editor. Instead, use the `index.ts` file for named exports to create a cleaner import structure and follow best practices for re-exporting components.
+
+For example, the `index.ts` file for the `Navbar` component would look like this:
+
+```ts
+import Navbar from './Navbar';
+
+export { Navbar };
+```
+
+This approach ensures that your imports remain simple and consistent throughout the project.
+
+Having established the importance of organizing components in their own directories and using `index.ts` for cleaner imports, let's take a look at how this principle can be applied in practice.
+
+Inefficient file organization — placing all files in one location:
+
+```code
+├── components
+    ├── widgets
+        ├── Navbar.tsx
+        ├── Navbar.css
+        ├── Navbar.test.tsx
+        ├── Sidebar.tsx
+        ├── Sidebar.css
+        ├── Sidebar.test.tsx
+```
+
+In this example, all widget-related files are placed in the same directory, which can make it harder to manage as the project grows.
+
+Efficient file organization — placing files in their own directories:
+
+```code
+├── components
+    ├── widgets
+        ├── navbar
+            ├── index.ts
+            ├── Navbar.tsx
+            ├── Navbar.css
+            ├── Navbar.test.tsx
+        ├── sidebar
+            ├── index.ts
+            ├── Sidebar.tsx
+            ├── Sidebar.css
+            ├── Sidebar.test.tsx
+```
+
+This structure improves navigation and management of components, making the project more understandable and maintainable. By keeping each component and its related files in a dedicated directory, you streamline the development process, simplify maintenance, and enhance overall project scalability.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Wrapping External Components
+
+It's advisable to avoid directly importing a large number of external components. An effective solution is to create adapters for such components, allowing their API to be modified if necessary. This also simplifies replacing used libraries in one place without needing to change the code throughout the project.
+
+This approach applies to both component libraries and various utilities. One of the simple and effective methods is to re-export such components from a common module. This makes the project more flexible and reduces dependency on specific libraries.
+
+### Example
+
+Inefficient approach — direct import of external components:
+
+```tsx
+import { DropDown } from 'pseudo-library-1';
+import { Modal } from 'pseudo-library-2';
+```
+
+Efficient approach — importing external components from an internal module:
+
+```tsx
+import { DropDown, Modal } from '@/modules/adapters';
+```
+
+Efficiently wrapping external components through adapters enhances code support and testing, as components aren't tied to specific libraries and their changes.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Separation of Business Logic and UI Components
+
+Components such as buttons and input fields are widely used throughout applications. Separating business logic components from UI components also involves organizing file structures accordingly. This facilitates easier navigation within the project and promotes component reuse.
+
+The project structure should clearly distinguish between components designed for business logic and those for UI. Consider an example file structure of a project:
+
+```code
+├── components
+    ├── ui
+        ├── button
+            ├── index.ts
+            ├── Button.tsx
+            ├── Button.css
+        ├── input
+            ├── index.ts
+            ├── Input.tsx
+            ├── Input.css
+    ├── containers
+        ├── user-form
+            ├── index.ts
+            ├── UserFormContainer.tsx
+            ├── UserFormContainer.test.tsx
+        ├── product-list
+            ├── index.ts
+            ├── ProductListContainer.tsx
+            ├── ProductListContainer.test.tsx
+```
+
+In this example, UI-related components are located in the "ui" folder, while components containing business logic are placed in the "containers" folder. Thus, the business logic related to user data input is handled within the `UserFormContainer` component, while the `Input` and `Button` components remain focused on rendering the UI and delegating interactions to the container. Similarly, the same UI components, such as `Input` and `Button`, are used in the `ProductListContainer`, with the business logic encapsulated within this respective container.
+
+This separation helps maintain clean and easily maintainable code, allowing for easy modification and independent testing of components.
+
+</ContentWrapper>

@@ -1,0 +1,42 @@
+<ContentWrapper>
+
+## Premature Optimization
+
+Before diving into optimization, ensure there are valid reasons for it. Blindly following best practices can be a waste of time if it doesn't significantly impact your application's performance.
+
+While it's important to consider optimization, the priority should always be on writing readable and maintainable code. Clean, well-structured code is much easier to improve and optimize later on.
+
+If you run into performance issues, begin by measuring and identifying the root causes. There's no benefit in reducing re-renders if the real issue lies elsewhere, such as in a large bundle size.
+
+Once you've identified the problem areas, tackle them based on their impact on performance.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Bundle Size
+
+The amount of JavaScript sent to the browser is a critical factor in your application's performance. Even if your app is fast, users won't experience it that way if they need to download 4 MB of JavaScript.
+
+Avoid creating a large monolithic bundle. Instead, use code-splitting techniques at the route level, and even further, to send only the minimal code required to the browser.
+
+Leverage lazy loading for parts of the code that aren't immediately necessary. For example, you can load additional parts of the application in the background or only when the user explicitly intends to use them. If clicking a button downloads a PDF, start loading the corresponding library when the user hovers over that button.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Re-rendering — Callbacks, Arrays and Objects
+
+Reducing the number of unnecessary component re-renders is important, though keep in mind that they rarely cause major performance issues.
+
+When passing callbacks as props from a parent component to a child, remember that each time the parent re-renders, a new callback function is created. Since React compares props by reference, even if two callbacks are logically equivalent, React will still consider them different. As a result, the child component will re-render, even if wrapped in `memo`. To prevent this, use the `useCallback` hook, which ensures the same callback reference is maintained across renders. For a detailed guide on using the `useCallback` hook check out our <PostLink id="repeated-calculations-on-re-renders#use-callback-usage">article</PostLink>.
+
+Similarly, passing arrays or objects as props can also trigger re-renders because of reference comparison. If an array or object is static, it's better to define it as a constant outside the component. If its creation depends on the component's state, you can use the `useMemo` hook to return the same reference across renders when appropriate. Explore the proper usage of the `useMemo` hook in our detailed <PostLink id="repeated-calculations-on-re-renders#use-memo-usage">article</PostLink>.
+
+</ContentWrapper>
+
+<ContentWrapper>
+    By following these practices, you can reduce unnecessary re-renders, leading
+    to better performance and responsiveness in your React application.
+</ContentWrapper>

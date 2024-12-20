@@ -1,0 +1,9 @@
+{
+    "title": "Repeated Calculations on Re-Renders",
+    "description": "Learn to optimize React components by avoiding repeated calculations during re-renders. Explore practical techniques like `useMemo` and `useCallback` with interactive examples showcasing the code behind improved performance.",
+    "section": "common-mistakes",
+    "last_updated_date": "10.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

@@ -1,0 +1,371 @@
+import { CaseNotes } from './_features/case-notes';
+import { CaseUserPreferences } from './_features/case-preferences';
+
+<ContentWrapper>
+## Explanation
+
+The custom hook `useLocalStorage` serves as a versatile tool for managing `localStorage` in React applications. Designed to streamline data persistence across sessions, it encapsulates common operations like storing, updating, and removing data with ease.
+
+At its core, this hook leverages React's state management capabilities through the `useState` hook, initializing state based on stored values retrieved from `localStorage`. Upon interaction with the component, updates trigger the modification of both the `localStorage` and the component's state, ensuring consistency across the application.
+
+One notable aspect of `useLocalStorage` is its seamless synchronization across different browser tabs. By dispatching storage events, it notifies other tabs of data modifications, enabling real-time updates and a cohesive user experience.
+
+Moreover, the hook optimizes performance through the utilization of `useEffect` and `useCallback` hooks. This ensures efficient subscription to storage changes and memoization of functions, respectively, resulting in a clean and efficient codebase.
+
+In summary, `useLocalStorage` simplifies the integration of `localStorage` functionality into React components, offering developers a robust solution for managing persistent data across sessions while maintaining optimal performance and synchronization across browser tabs.
+
+### Usage Cases
+
+-   **Managing User Preferences**: Store user preferences such as app theme, preferred language, and style preferences.
+-   **Saving Form Data and Component State**: Persist form state, filters, and other user data between sessions.
+-   **Controlling Interface Preferences**: Store user preferences regarding styles, color schemes, and interface appearance.
+-   **Synchronizing State Across Browser Tabs**: Ensure data and state synchronization between different tabs of the same application.
+-   **Managing Editable Data**: Save changes made to editable data such as notes, tasks, or text documents.
+-   **Supporting Local Caching**: Cache data to improve performance and provide quick access to frequently used information.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+type InitialValue<T> = T | (() => T);
+
+const useLocalStorage = <T>(
+    key: string,
+    initialValue: InitialValue<T>
+): [T, (value: T) => void, () => void] => {
+    // Check if there is a value in `localStorage` for the given `key`
+    const [value, setValue] = useState(() => {
+        try {
+            const storedValue = localStorage.getItem(key);
+
+            return storedValue ? JSON.parse(storedValue) : initialValue;
+        } catch (error) {
+            console.error('Error retrieving value from `localStorage`:', error);
+
+            // If parsing fails, return the initial value
+            return initialValue;
+        }
+    });
+
+    // Function to set value in `localStorage`,
+    // `useCallback` is used to memoize the function to prevent
+    // recreation of the function instance when `key` doesn't change
+    const setLocalStorageValue = useCallback(
+        (newValue: T) => {
+            try {
+                setValue(newValue);
+
+                localStorage.setItem(key, JSON.stringify(newValue));
+
+                // Dispatch a `storage` event to notify other tabs
+                window.dispatchEvent(
+                    new StorageEvent('storage', {
+                        key,
+                        newValue: JSON.stringify(newValue),
+                    })
+                );
+            } catch (error) {
+                console.error('Error saving value to `localStorage`:', error);
+            }
+        },
+        [key]
+    );
+
+    // Function to remove value from `localStorage`,
+    // `useCallback` is used for the same reason as above
+    const removeLocalStorageValue = useCallback(() => {
+        setValue(initialValue);
+
+        localStorage.removeItem(key);
+    }, [initialValue, key]);
+
+    // `useEffect` is used to subscribe to changes in the `localStorage` made by other tabs,
+    // and it depends on the `key` to listen for changes relevant to this specific key.
+    // If the `key` changes, `useEffect` will run again to update the subscription for the new key
+    useEffect(() => {
+        const updateAllTabs = (event: StorageEvent) => {
+            // Check if the changed `event.key` matches the current `key` and `newValue` is not `null`
+            if (event.key === key && event.newValue !== null) {
+                // Update the state with the new value from `localStorage`
+                setValue(JSON.parse(event.newValue));
+            }
+        };
+
+        // Add event listener for `storage` events
+        window.addEventListener('storage', updateAllTabs);
+
+        // Cleanup function to remove event listener when component unmounts
+        return () => {
+            window.removeEventListener('storage', updateAllTabs);
+        };
+    }, [key]); // `useEffect` depends on the `key` to subscribe to changes relevant to this `key`
+
+    return [value, setLocalStorageValue, removeLocalStorageValue]; // Re-run `useEffect` only when any of these values change
+};
+
+export default useLocalStorage;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const [value, setLocalStorageValue, removeLocalStorageValue] = useLocalStorage(
+    key,
+    initialValue
+);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'key',
+                cells: [
+                    'string',
+                    'The key under which the value is stored in `localStorage`.',
+                ],
+            },
+            {
+                head: 'initialValue',
+                cells: [
+                    'T | (() => T)',
+                    'The initial value to be stored in `localStorage` if no value is present.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'value',
+                cells: [
+                    'T',
+                    'The value retrieved from `localStorage`, or the initial value.',
+                ],
+            },
+            {
+                head: 'setLocalStorageValue',
+                cells: [
+                    '(value: T) => void',
+                    'Function to set the value in `localStorage` and update the state.',
+                ],
+            },
+            {
+                head: 'removeLocalStorageValue',
+                cells: [
+                    '() => void',
+                    'Function to remove the value from `localStorage` and update the state.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Managing Notes
+
+This example demonstrates how to use the `useLocalStorage` custom hook for managing persistent state with `localStorage` to create a simple notes management app. The app allows users to add and delete notes while persisting changes locally and ensuring synchronization across different browser tabs, providing a cohesive experience across sessions. Notes can be removed by clicking on them, and their count dynamically updates in real time. This approach showcases efficient state management and user interaction with a straightforward and functional design.
+
+```tsx
+const noteMessage = 'Note with Id';
+
+const maxNotes = 6;
+
+const initialItems = loadData(3);
+
+const Container: FC = () => {
+    // Loading notes from `localStorage` using the custom hook
+    const [notes, setNotes] = useLocalStorage<IDataItems>(
+        'notes',
+        initialItems
+    );
+
+    // Handler for adding a new note
+    const handleAddNote = () => {
+        if (notes.length === maxNotes) return;
+
+        const newId = notes.length === 0 ? 1 : notes[notes.length - 1].id + 1;
+
+        setNotes([
+            ...notes,
+            {
+                id: newId,
+                name: `${noteMessage} ${newId}`,
+            },
+        ]);
+    };
+
+    // Handler for deleting a note
+    const handleDeleteNote = (item: IDataItem) => {
+        // Creating a new array of notes excluding the one to be deleted
+        setNotes(notes.filter((note) => note.id !== item.id));
+    };
+
+    return (
+        <Layer title="Container">
+            <Text>
+                Notes remain: {maxNotes - notes.length} / {maxNotes}
+            </Text>
+            {notes.length !== 0 && (
+                <List
+                    items={notes}
+                    onClick={handleDeleteNote}
+                />
+            )}
+            <div className="flex w-full justify-center">
+                {/* Button for adding a new note */}
+                <Button
+                    onClick={handleAddNote}
+                    disabled={maxNotes === notes.length}
+                >
+                    Add Note
+                </Button>
+            </div>
+            <Message>Click on the note to remove it.</Message>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseNotes />
+</ExampleWrapper>
+
+### Dynamic Styling and Preferences Management
+
+This example demonstrates a dynamic settings interface using the `useLocalStorage` custom hook to manage and persist user preferences. Users can select their preferred font size, background color, and text color through an interactive UI. These preferences are applied in real-time to a preview container, allowing users to see the changes immediately. Additionally, the chosen settings are saved in `localStorage`, ensuring they persist across sessions and even when the tab is closed.
+
+This approach avoids the need for props drilling, maintaining a clear separation of concerns and ensuring scalability. While the preview happens in a dedicated component in this example, the persistence logic allows the chosen settings to be applied in any part of the web application, even in the most distant components.
+
+```tsx
+const Settings: FC = () => {
+    // State for managing font size
+    const [fontSize, setFontSize] = useLocalStorage<number>(
+        'fontSize',
+        defaultPreferences.fontSize
+    );
+
+    // State for managing selected background color
+    const [selectedBgColor, setSelectedBgColor] = useLocalStorage<string>(
+        'selectedBgColor',
+        defaultPreferences.bgColor
+    );
+
+    // State for managing selected text color
+    const [selectedTextColor, setSelectedTextColor] = useLocalStorage<string>(
+        'selectedColor',
+        defaultPreferences.textColor
+    );
+
+    return (
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+                <Label>Select Font Color</Label>
+                <Counter
+                    min={10}
+                    step={2}
+                    max={20}
+                    value={fontSize}
+                    onChange={setFontSize}
+                />
+            </div>
+            <div className="flex flex-col gap-2">
+                <Label>Select Background Color</Label>
+                <div className="flex gap-2">
+                    {bgColors.map((bgColor) => (
+                        <ColorOption
+                            key={bgColor}
+                            color={bgColor}
+                            selectedColor={selectedBgColor}
+                            onColorChange={setSelectedBgColor}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="flex flex-col gap-2">
+                <Label>Select Text Color</Label>
+                <div className="flex flex-wrap gap-2 gap-y-4">
+                    {textColors.map((textColor) => (
+                        <ColorOption
+                            key={textColor}
+                            color={textColor}
+                            selectedColor={selectedTextColor}
+                            onColorChange={setSelectedTextColor}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const Container: FC = () => {
+    // Retrieve font size and color preferences from `localStorage`
+
+    const [fontSize] = useLocalStorage<number>(
+        'fontSize',
+        defaultPreferences.fontSize
+    );
+
+    const [selectedBgColor] = useLocalStorage<string>(
+        'selectedBgColor',
+        defaultPreferences.bgColor
+    );
+
+    const [selectedTextColor] = useLocalStorage<string>(
+        'selectedColor',
+        defaultPreferences.textColor
+    );
+
+    // Apply font size and text color styles dynamically
+    const style = {
+        fontSize: fontSize,
+        color: selectedTextColor,
+    };
+
+    return (
+        <Layer title="Container">
+            <Settings />
+            <div
+                style={style}
+                className={cn(
+                    'rounded-lg p-4',
+                    selectedBgColor === BackgroundColors.Dark
+                        ? 'bg-gray-500'
+                        : 'bg-white'
+                )}
+            >
+                <span>
+                    My font size and colors depend on your choice, and it will
+                    also be saved even if you close the tab.
+                </span>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUserPreferences />
+</ExampleWrapper>
+
+</ContentWrapper>

@@ -1,0 +1,9 @@
+{
+    "title": "Application Structure",
+    "description": "Learn how to organize your React application effectively! Explore tips on absolute paths, component directories, external wrappers, and separating logic from UI.",
+    "section": "best practices",
+    "last_updated_date": "03.05.24",
+    "flags": {
+        "showCodeNotice": false
+    }
+}

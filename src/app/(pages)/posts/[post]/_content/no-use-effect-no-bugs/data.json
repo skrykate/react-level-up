@@ -1,0 +1,9 @@
+{
+    "title": "No useEffect — No bugs",
+    "description": "Explore the common pitfall of excessive `useEffect` usage in React, especially in input components, where it's not needed. Learn how to avoid bugs and keep your code simpler, cleaner, and more predictable with a better approach.",
+    "section": "best practices",
+    "last_updated_date": "02.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

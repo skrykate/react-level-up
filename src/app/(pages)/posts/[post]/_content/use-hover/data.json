@@ -1,0 +1,9 @@
+{
+    "title": "useHover( )",
+    "description": "The `useHover` hook provides a way to track whether the mouse cursor is hovering over a specific DOM element. In this article, you'll find practical code implementations and real-world use cases, demonstrating how the custom hook can be applied in various scenarios. We'll break down the process of creating the hook, explain its key features, and provide a detailed explanation to help you understand its functionality and use.",
+    "section": "custom hooks",
+    "last_updated_date": "25.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

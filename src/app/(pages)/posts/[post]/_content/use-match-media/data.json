@@ -1,0 +1,9 @@
+{
+    "title": "useMatchMedia( )",
+    "description": "The `useMatchMedia` hook facilitates responsive design in React by efficiently managing media queries, allowing for easy customization of device-specific conditions. In this article, you'll find practical code implementations and real-world use cases, demonstrating how the custom hook can be applied in various scenarios. We'll break down the process of creating the hook, explain its key features, and provide a detailed explanation to help you understand its functionality and use.",
+    "section": "custom hooks",
+    "last_updated_date": "14.07.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

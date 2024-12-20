@@ -1,0 +1,290 @@
+import { CasePersonBio } from './_features/case-person-bio';
+
+<ContentWrapper>
+## Explanation
+
+The custom hook `useFetch` provides a seamless solution for fetching data in React components, with a notable feature being caching. By encapsulating common asynchronous logic, this hook efficiently manages the state of fetch operations, including status updates, error handling, and data retrieval.
+
+The caching mechanism enhances performance by storing previously fetched data, optimizing the application by minimizing redundant network requests, thereby improving overall responsiveness and reducing server load. Notably, the cache is stored in `useRef` throughout the component's lifecycle, remaining accessible and preserved as long as the component is active and not unmounted. By efficiently managing the cache in this manner, `useFetch` ensures fast and efficient data retrieval, contributing to a smoother user experience.
+
+Incorporating `useReducer` and `useEffect` hooks internally, `useFetch` elegantly handles various aspects of data fetching. It seamlessly transitions between different states — "idle", "fetching", "fetched", or "error" — based on the outcome of the fetch operation. Additionally, it gracefully manages component unmounts, ensuring clean-up and preventing potential memory leaks by canceling ongoing requests.
+
+By abstracting away the complexities of data fetching and state management, `useFetch` empowers developers to integrate asynchronous data fetching into their React applications with ease, significantly reducing boilerplate code and enhancing development efficiency.
+
+### Usage Cases
+
+-   **Fetching User Data**: Retrieve user information from an API endpoint based on selected criteria, such as user ID or username.
+-   **Displaying Loading Indicators**: Implement loading indicators to provide visual feedback to users while fetching data from the server.
+-   **Handling Errors**: Manage error states gracefully by displaying error messages when data fetching encounters issues, ensuring a smooth user experience.
+-   **Dynamic Content Rendering**: Dynamically render content based on the fetched data, enabling personalized and responsive user interfaces.
+-   **Optimizing Performance with Caching**: Utilize caching functionality to store previously fetched data, reducing redundant network requests and improving application responsiveness.
+-   **Efficient Data Management**: Streamline data fetching and state management logic in React components, minimizing boilerplate code and enhancing development efficiency.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+enum Status {
+    IDLE = 'idle',
+    FETCHING = 'fetching',
+    FETCHED = 'fetched',
+    ERROR = 'error',
+}
+
+// Define action types excluding IDLE status
+type ActionTypes = Exclude<Status, Status.IDLE>;
+
+export interface State {
+    status: Status;
+    errorMessage: string;
+    data: unknown;
+}
+
+interface Action {
+    type: ActionTypes;
+    payload?: unknown;
+}
+
+const initialState: State = {
+    status: Status.IDLE,
+    errorMessage: '',
+    data: [],
+};
+
+const reducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case Status.FETCHING:
+            // Set status to fetching
+            return { ...state, status: Status.FETCHING };
+        case Status.FETCHED:
+            // Set status to fetched and update data
+            return { ...state, status: Status.FETCHED, data: action.payload };
+        case Status.ERROR:
+            // Set status to error and update error message
+            return {
+                ...state,
+                status: Status.ERROR,
+                errorMessage: action.payload as string,
+            };
+        default:
+            // Return current state for unknown actions
+            return state;
+    }
+};
+
+const useFetch = (url: string): State => {
+    // Cache for storing fetched data
+    const cacheRef = useRef<{ [key: string]: unknown }>({});
+
+    // Reference to abort controller for cancelling requests
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Use `useReducer` hook for managing state
+    const [state, dispatch] = useReducer(reducer, initialState);
+
+    useEffect(() => {
+        // Create flag to cancel request on component unmount
+        let cancelRequest = false;
+
+        // Ignore empty or whitespace-only URLs
+        if (!url || !url.trim()) return;
+
+        const fetchData = async (): Promise<void> => {
+            // Dispatch fetching action
+            dispatch({ type: Status.FETCHING });
+
+            // Check if the data for this URL is already cached
+            if (cacheRef.current[url]) {
+                // Retrieve data from cache if available
+                const data = cacheRef.current[url];
+
+                // Dispatch fetched action with cached data
+                dispatch({ type: Status.FETCHED, payload: data });
+            } else {
+                try {
+                    // Create a new `AbortController` and save it in `useRef`
+                    const controller = new AbortController();
+                    abortControllerRef.current = controller;
+
+                    // Make the network request and pass the abort signal
+                    const response = await fetch(url, {
+                        signal: controller.signal,
+                    });
+
+                    // Throw an error if the response is not successful
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch data');
+                    }
+
+                    // Parse response data
+                    const data = await response.json();
+
+                    // Cache fetched data
+                    cacheRef.current[url] = data;
+
+                    // If request was cancelled, do nothing
+                    if (cancelRequest) return;
+
+                    // Dispatch fetched action with retrieved data
+                    dispatch({ type: Status.FETCHED, payload: data });
+                } catch (error) {
+                    // If request was cancelled, do nothing
+                    if (cancelRequest) return;
+
+                    // If error is an instance of `Error`, get error message. Otherwise, convert to string
+                    const message =
+                        error instanceof Error ? error.message : String(error);
+
+                    // Dispatch error action and pass error message as payload
+                    dispatch({
+                        type: Status.ERROR,
+                        payload: message,
+                    });
+                }
+            }
+        };
+
+        // Call `fetchData` function on component mount
+        fetchData();
+
+        return (): void => {
+            // Set `cancelRequest` flag to `true` on component unmount
+            cancelRequest = true;
+
+            if (abortControllerRef.current) {
+                // Cancel previous request on component unmount
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [url]); // Re-run `useEffect` only when `url` changes
+
+    return state;
+};
+
+export default useFetch;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Reference
+
+```tsx
+const { status, data, errorMessage } = useFetch(url);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'url',
+                cells: [
+                    'string',
+                    'The URL of the API endpoint to fetch data from.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'status',
+                cells: [
+                    'Status',
+                    'The current status of the fetch operation ("idle", "fetching", "fetched", or "error")',
+                ],
+            },
+            {
+                head: 'errorMessage',
+                cells: [
+                    'string',
+                    'The error message if an error occurred during the request.',
+                ],
+            },
+
+            {
+                head: 'data',
+                cells: ['unknown', 'The fetched data from the API endpoint.'],
+            },
+        ],
+    }}
+
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Fetching User Data
+
+The `Container` component utilizes the `useFetch` hook to retrieve user data using the jsonplaceholder API. Users can select a person's identifier from a list, and the corresponding biographical information is fetched and displayed. The component also renders a loading indicator while fetching data and an error message in case of failure. If a user selects an identifier that has been requested previously, the data is retrieved from the cache, resulting in faster information display than sending a request to the server.
+
+```tsx
+// Options for person selection
+const idsList = Array.from({ length: 4 }, (_, index) => ({
+    id: index + 1,
+    name: `User Id: ${index + 1}`,
+}));
+
+// Adding user with non-existent ID to show error message
+idsList.push({
+    id: 25,
+    name: `Non-existent user`,
+});
+
+const Container: FC = () => {
+    // State to manage selected person ID
+    const [personId, setPersonId] = useState(1);
+
+    // Fetch user data based on selected person ID using custom hook
+    const { status, data, errorMessage }: State = useFetch(
+        `https://jsonplaceholder.typicode.com/users/${personId}`
+    );
+
+    // Handler to update the selected person ID
+    const handleChange = (item: (typeof idsList)[0]) => {
+        setPersonId(item.id);
+    };
+
+    return (
+        <Layer title="Container">
+            <List
+                items={idsList}
+                selected={personId}
+                onClick={handleChange}
+            />
+            <div className="flex w-full justify-center">
+                {/* Display a loader while fetching data  */}
+                {status === 'fetching' && <Loader />}
+
+                {/* Display an error message in case of error  */}
+                {status === 'error' && (
+                    <Message type={MessageType.Error}>{errorMessage}</Message>
+                )}
+                {/* Display bio information once fetched  */}
+                {status === 'fetched' && (
+                    <PersonBio {...(data as FullUserData)} />
+                )}
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CasePersonBio />
+</ExampleWrapper>
+
+</ContentWrapper>

@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply flex min-h-screen w-full justify-center bg-white bg-hero-image bg-fixed font-main dark:bg-neutral-950;
+    }
+
+    .rlu__focus {
+        @apply ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 dark:ring-offset-neutral-950 dark:focus-visible:ring-white;
+    }
+
+    .rlu__border {
+        @apply border border-neutral-200 dark:border-neutral-800;
+    }
+
+    .rlu__bg {
+        @apply bg-white dark:bg-neutral-950;
+    }
+
+    .rlu__bg-blured {
+        @apply bg-white/50 backdrop-blur dark:bg-neutral-950/50;
+    }
+
+    .rlu__bg-dotted {
+        @apply h-full w-full border-neutral-100 bg-white/50 bg-[radial-gradient(#e5e5e5_1px,transparent_1px)] shadow-inner [background-size:16px_16px] dark:border-neutral-900 dark:bg-neutral-950/50 dark:bg-[radial-gradient(#262626_1px,transparent_1px)];
+    }
+
+    .rlu__bg-decoration {
+        @apply bg-neutral-200 dark:bg-neutral-800;
+    }
+
+    .rlu__text {
+        @apply text-black dark:text-white;
+    }
+
+    .rlu__text-reversed {
+        @apply text-white dark:text-black;
+    }
+
+    .rlu__corner {
+        @apply rounded-xl;
+    }
+
+    .rlu__shadow {
+        @apply shadow-lg;
+    }
+}

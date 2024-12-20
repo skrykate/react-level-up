@@ -1,0 +1,9 @@
+{
+    "title": "State Management Using Reducers",
+    "description": "Discover how `useReducer` simplifies complex state management in React compared to `useState`. Learn through a practical example and see how it can make your code more structured and maintainable.",
+    "section": "best practices",
+    "last_updated_date": "10.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "title": "Using Prop Drilling",
+    "description": "Explore the concept of prop drilling in React, its challenges, and effective solutions. Learn how to simplify data management with React Context, component restructuring, and state managers, with interactive examples demonstrating the impact on re-renders.",
+    "section": "common-mistakes",
+    "last_updated_date": "21.07.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

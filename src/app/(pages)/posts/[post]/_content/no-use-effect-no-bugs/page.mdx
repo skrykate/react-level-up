@@ -1,0 +1,456 @@
+import { CaseAutoCompleteInitial } from './_features/case-autocomplete-initial';
+import { CaseAutoCompletePartial } from './_features/case-autocomplete-partial';
+import { CaseAutoCompleteBad } from './_features/case-autocomplete-bad';
+import { CaseAutoCompleteGood } from './_features/case-autocomplete-good';
+
+<ContentWrapper>
+In the React development environment, built-in hooks are essential tools for managing side effects and component states. As suggested by the title of this article, we will be focusing specifically on the `useEffect` hook. It's a powerful tool for handling side effects in functional components, such as making API requests, setting up event subscriptions, updating document titles, and manipulating the DOM outside of regular rendering. However, when working with inputs, excessive use of `useEffect` can lead to unforeseen bugs and complicate the application logic. This article will delve into a common mistake associated with using `useEffect` in input components, as well as propose a more efficient approach to help avoid problems and make the code cleaner and more predictable.
+
+To understand what is being discussed, let's code. We will consider the problem using a primitive autocomplete component as an example. The first step is, of course, to render the input itself, store its state, and define the `handleChange` . So far, everything is familiar and clear:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <Input
+                    value={value}
+                    onChange={handleChange}
+                />
+            </div>
+        </Layer>
+    );
+};
+```
+
+The next task is to load data based on the value in the input and display it in the `List` component. Most often, the following code is written for this task:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+    };
+
+    useEffect(() => {
+        if (value.length > 0) {
+            loadData(value).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    }, [value]);
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full">
+                        <List items={data} />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+Here, another state variable — `data` has been added to store the loaded options for the `List` component. Additionally, `useEffect` has been added, which, upon the change of the input value, will load data by sending a request via `loadData` async function and updating the `data` state, provided that the value is not an empty string. It's worth noting that this code doesn't account for race conditions or debounce logic because these aren't relevant for understanding the current problem.
+
+Now, let's see how the code works in the browser. Enter a value in the input, for example, a character name "Peter".
+
+<ExampleWrapper isResetAllowed>
+    <CaseAutoCompleteInitial />
+</ExampleWrapper>
+
+If you enter "Peter", two suggestions should appear under the input: "Peter Parker" and "Peter Quill". However, it isn't yet possible to click on a suggestion to insert its value into the input. So, let's add this logic:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+    };
+
+    useEffect(() => {
+        if (value.length > 0) {
+            loadData(value).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    }, [value]);
+
+    const handleSelectCharacter = (character: ICharacter) => {
+        setValue(character.name);
+
+        setData([]);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full bg-neutral-100 dark:bg-neutral-900">
+                        <List
+                            items={data}
+                            onClick={handleSelectCharacter}
+                        />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+The function for handling the selection of a suggestion, `handleSelectCharacter`, has been added, which takes the selected suggestion as an argument — `character`. This function updates the input value by inserting the selected character's name (from the `character` argument) and resets the `data` state.
+
+It seems that at this stage everything should work perfectly. But let's still look at the result in the browser. Enter the value "Peter" in the input again, and after the suggestions appear, try clicking on the first one.
+
+<ExampleWrapper isResetAllowed>
+    <CaseAutoCompletePartial />
+</ExampleWrapper>
+
+If you selected the first suggested option, "Peter Parker", this value indeed appeared in the input. However, the `List` component did not disappear (although it should have, since the `data` state is reset in the `handleSelectCharacter` function), and rather even changed — the only remaining suggestion is "Peter Parker".
+
+Why did this happen? After all, the `data` state is explicitly reset when the `handleSelectCharacter` function is called.
+
+At this stage, it's worth returning to the code to understand what went wrong:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+    };
+
+    useEffect(() => {
+        if (value.length > 0) {
+            loadData(value).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    }, [value]);
+
+    const handleSelectCharacter = (character: ICharacter) => {
+        setValue(character.name);
+
+        setData([]);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full bg-neutral-100 dark:bg-neutral-900">
+                        <List
+                            items={data}
+                            onClick={handleSelectCharacter}
+                        />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+So, the suggestion list is indeed cleared when `handleSelectCharacter` is called, but besides this, the value in the input changes. And since the input value is in the dependencies array of the `useEffect`, the body of `useEffect` is triggered again when it changes. Since the input is not empty, the code inside the `if` condition block executes, making another request to load updated suggestions based on the new value ("Peter Parker"). The result is an input filled with the value "Peter Parker" and a suggestion list containing only one option: "Peter Parker", which matches the input value.
+
+Agree, an unpleasant bug? To fix this, we need to consider how to do it correctly without breaking the existing logic.
+
+A common solution to this problem is to introduce a boolean flag called `disableSuggestions`, which will indicate when not to display suggestions.
+
+Let's take a look at the code of this solution:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const [disableSuggestions, setDisableSuggestion] = useState(false);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+
+        setDisableSuggestion(false);
+    };
+
+    useEffect(() => {
+        if (disableSuggestions) {
+            return;
+        }
+
+        if (value.length > 0 && !disableSuggestions) {
+            loadData(value).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    }, [value, disableSuggestions]);
+
+    const handleSelectCharacter = (character: ICharacter) => {
+        setValue(character.name);
+
+        setDisableSuggestion(true);
+
+        setData([]);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full bg-neutral-100 dark:bg-neutral-900">
+                        <List
+                            items={data}
+                            onClick={handleSelectCharacter}
+                        />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+The `disableSuggestions` state variable will be set to `true` when a suggestion is selected (in the `handleSelectCharacter` function) and `false` when typing in the input (in the `handleChange` function). Check the result by applying the same steps.
+
+<ExampleWrapper isResetAllowed>
+    <CaseAutoCompleteBad />
+</ExampleWrapper>
+
+Although everything works, there is a sense that this is an unpleasant workaround, and the reason for this workaround is `useEffect`. After all, it reacts to any input value change, although it should only respond to changes caused by user typing, specifically the `onchange` event.
+
+After identifying the problem, it's time to share a more effective solution. It comes down to the concept of "Clear Instructions". Instead of modifying one field, causing reactions that execute additional code and potentially trigger changes in other components, I suggest using clear, definitive instructions within a single function. This approach avoids unclear reaction chains and ensures predictable behavior.
+
+Enough theory, let's move on to practice. Here is the initial code with one input again:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setValue(event.target.value);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <Input
+                    value={value}
+                    onChange={handleChange}
+                />
+            </div>
+        </Layer>
+    );
+};
+```
+
+Next, the `List` component is added, but the `handleSelectCharacter` function has not been included yet:
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const newValue = event.target.value;
+
+        setValue(newValue);
+
+        if (newValue.length > 0) {
+            loadData(newValue).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full bg-neutral-100 dark:bg-neutral-900">
+                        <List items={data} />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+The difference from the previous solution at the same stage is that there is no `useEffect`. The logic that was inside `useEffect` (sending a request using the `loadData` function and subsequently updating the `data` state) is now right inside the `handleChange` function. The result of this solution is a small function that describes literally everything that should happen in the application when typing text in the input. This is what is called "Clear Instructions".
+
+Now, we just need to add the character selection handler — the `handleSelectCharacter` function. In the current solution, this is very simple.
+
+```tsx
+const CharacterSelector: FC = () => {
+    const [value, setValue] = useState('');
+
+    const [data, setData] = useState<ICharacters>([]);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const newValue = event.target.value;
+
+        setValue(newValue);
+
+        if (newValue.length > 0) {
+            loadData(newValue).then((result) => {
+                setData(result);
+            });
+        } else {
+            setData([]);
+        }
+    };
+
+    const handleSelectCharacter = (character: ICharacter) => {
+        setValue(character.name);
+
+        setData([]);
+    };
+
+    return (
+        <Layer title="CharacterSelector">
+            <div className="flex flex-col gap-2">
+                <Label>Name</Label>
+                <div className="relative h-14">
+                    <Input
+                        value={value}
+                        onChange={handleChange}
+                    />
+                    <div className="absolute top-16 w-full bg-neutral-100 dark:bg-neutral-900">
+                        <List
+                            items={data}
+                            onClick={handleSelectCharacter}
+                        />
+                    </div>
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+The logic remains the same — the new value (`character`) passed as an argument to the `handleSelectCharacter` function is assigned to the `value` state, and the `data` state is cleared. And this solution works.
+
+To confirm, enter the character name "Peter" and then click on the first suggestion.
+
+<ExampleWrapper isResetAllowed>
+    <CaseAutoCompleteGood />
+</ExampleWrapper>
+
+As with the result of the "useEffect Approach", the user can easily select the character "Peter Parker", and there will be no side effects.
+
+To summarize — in the "Clear Instructions Approach", the `handleSelectCharacter` function specifies resetting the `data` state, meaning the suggestion list should not be displayed when this function is called — and it isn't. Additionally, there are no side effects, which in turn can reduce the number of bugs in the application. Moreover, compared to the "useEffect Approach", one fewer state variable is used, and everything still works. This is why I prefer the "Clear Instructions Approach".
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Comparison
+
+<Table
+    tableContent={{
+        headerItems: [
+            'Aspect',
+            'useEffect Approach',
+            'Clear Instructions Approach',
+        ],
+        bodyItems: [
+            {
+                head: 'State Change Reaction',
+                cells: [
+                    'Reacts to any change in input value, leading to unnecessary re-renders.',
+                    'Encapsulates all relevant logic within specific event handlers, ensuring controlled state updates.',
+                ],
+            },
+            {
+                head: 'Handling Side Effects',
+                cells: [
+                    'May cause race conditions if multiple requests are made in quick succession.',
+                    'Prevents unnecessary re-renders by only triggering side effects when needed.',
+                ],
+            },
+            {
+                head: 'Component Complexity',
+                cells: [
+                    'Adds complexity by spreading logic across multiple parts of the component.',
+                    'Simplifies the component by consolidating logic into clear and concise functions.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Advantages of the Clear Instructions Approach
+
+-   **Reduced Complexity:** Less reliance on `useEffect`, making the component easier to understand and maintain.
+-   **Improved Performance:** Fewer re-renders and better handling of side effects.
+-   **Better Control:** Clear separation of concerns with logic contained within event handlers.
+
+</ContentWrapper>
+
+<ContentWrapper>
+This topic may seem overly simplistic, but I often see such workaround solutions ("useEffect Approach") everywhere — I can't recall anyone not using `useEffect` when working with inputs. Most likely, the root of the problem is poor understanding of the tool's documentation, which clearly states the purpose of `useEffect` <A href="https://react.dev/reference/react/useEffect">hook</A>:
+
+> `useEffect` is a React Hook that lets you synchronize a component with an external system.
+
+If this seems simple and obvious to you, ask your colleague how they write such code, and you might be very surprised.
+
+</ContentWrapper>

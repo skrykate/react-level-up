@@ -1,0 +1,126 @@
+<ContentWrapper>
+In most components, it's common to work with multiple logical values for displaying or hiding certain HTML elements on the page. This is perfectly normal. However, there are several different ways to handle this logic within a component. The most commonly used is the `&&` operator. Although it's fully functional in JavaScript, it can lead to some unforeseen consequences in your user interface. Let's consider an example:
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {totalMessages && (
+                <span>You have {totalMessages} unread messages</span>
+            )}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+In this example, the component should display the number of unread messages. However, if `totalMessages` equals zero, only `0` will be displayed on the page. This happens because in JavaScript, the value `0` is considered falsy. The `&&` operator returns a falsy value if either of its operands is falsy, in this case, when `totalMessages` equals `0`. And since the condition is falsy, React won't render the second argument — the message, and instead will display the value of `totalMessages`, which is a `number`. React displays values that are of type `string` or `number`. When using this syntax for conditional rendering, it's better to explicitly check the logical value, rather than relying on type coercion in JavaScript. This helps to avoid unexpected side effects.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Code Improvement Options
+
+### Using a Boolean Value
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    const hasMessages = totalMessages > 0;
+
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {hasMessages && (
+                <span>You have {totalMessages} unread messages</span>
+            )}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+Here, we first create a boolean variable `hasMessages`, which stores the result of checking whether `totalMessages` has a value greater than zero. Then we use this variable for conditional rendering of the text. This makes the code more understandable and manageable, improving its readability.
+
+### Using Double Exclamation Marks
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {!!totalMessages && (
+                <span>You have {totalMessages} unread messages</span>
+            )}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+Double exclamation marks convert the number of unread messages into a boolean value. A value of `0` will be converted to `false`, resulting in nothing being displayed on the page. However, if the count is a truthy value (i.e., not `0`, `null`, `undefined`, or `NaN`), the specified expression after `&&` will be evaluated and rendered. This approach improves code readability and simplifies maintenance.
+
+### Splitting into Separate Components with Explicit Condition Checking
+
+```tsx
+const totalMessages = 0;
+
+interface MessageProps {
+    totalMessages: number;
+}
+
+const Message: FC<MessageProps> = ({ totalMessages }) => {
+    if (totalMessages <= 0) {
+        return null;
+    }
+
+    return <span>You have {totalMessages} unread messages</span>;
+};
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            <Message totalMessages={totalMessages} />
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+Sometimes it makes sense to split a component with conditional rendering into separate components. In this example, the logic of checking is moved to a separate standalone component `Message`, which is responsible only for displaying the message about the number of unread messages. Inside this component, we explicitly check the value of `totalMessages` and return `null` if it's less than or equal to zero. This ensures that the component won't render if there are no unread messages. Additionally, this helps to make the code more modular and easier to maintain, enhancing readability and enabling code reuse. Of course, this solution is more suitable for more complex components, unlike this example.
+
+### Using the Ternary Operator
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {totalMessages ? (
+                <span>You have {totalMessages} unread messages</span>
+            ) : null}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+Ternary operators can elegantly solve the problem by returning `null` if there are no unread messages. This method makes the code more compact and readable since the condition and the rendering result are in the same place. Such a solution enhances the perception of logic and simplifies code maintenance.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+As you can see, there are multiple approaches to conditional rendering in React, and the choice of a specific method may depend on personal preferences, project requirements, and the component itself. However, it's important to remember that implicit type coercion in JavaScript creates unexpected side effects and makes the code less reliable and readable.
+
+</ContentWrapper>

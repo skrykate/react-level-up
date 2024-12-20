@@ -1,0 +1,375 @@
+import { CaseModal } from './_features/case-modal';
+import { CaseGallery } from './_features/case-gallery';
+import { CaseQuiz } from './_features/case-quiz';
+
+<ContentWrapper>
+## Explanation
+
+The `useKeyPress` custom React hook allows you to monitor the state of a specific keyboard key, indicating whether it's currently pressed. Additionally, it provides the flexibility to specify a callback function that gets triggered whenever the designated key is pressed. It offers versatility, supporting two distinct usage patterns:
+
+1. **Without passing a callback function**, allowing for direct access to the key press state in the component.
+2. **By passing a callback function**, facilitating event-driven actions triggered by key presses. In this case, there's no necessity to return a value if it's not needed.
+
+This hook enhances user interaction by enabling developers to create responsive and dynamic UI components that respond to keyboard input. By encapsulating keyboard event handling logic, `useKeyPress` promotes code reusability and improves the maintainability of React applications.
+
+It efficiently manages event listeners, ensuring proper cleanup when the component unmounts or when the target key changes. Its simplicity lies in its ability to abstract away the complexities of event handling, allowing developers to focus on implementing desired behavior for specific keys without worrying about low-level event management. With `useKeyPress`, React developers can seamlessly integrate keyboard interaction into their applications, enhancing user experience and interactivity with minimal effort.
+
+### Usage Cases
+
+#### Without Passing a Callback Function
+
+-   **Conditional Rendering**: Enable or disable rendering of specific elements based on key presses.
+-   **Focus Management**: Shift focus between elements or components upon pressing a designated key.
+-   **Navigation Control**: Navigate between different sections or pages within the application based on key input.
+
+#### By Passing a Callback Function
+
+-   **Keyboard Event Handling**: Execute specific actions or handle events upon pressing a designated key, such as submitting user input when it isn't wrapped in a form tag.
+-   **Enhanced Interaction**: Implement interactive features that respond to specific key presses, such as triggering animations or toggling display modes.
+-   **Accessibility Enhancements**: Implement keyboard shortcuts to improve accessibility for users with disabilities, facilitating easier navigation and interaction with the application.
+-   **Hotkeys for Function Access**: Use hotkeys for quick access to essential application functions, for example, pressing `F` to open the search bar.
+-   **Video Players**: Control video playback using keys such as `Space` for pause/play and arrows for seeking.
+-   **Modal Dialogs**: Close modal dialogs or pop-ups by pressing the `Escape` key.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useKeyPress = (targetKey: string, handler?: () => void): boolean => {
+    // Initialize the state for keeping track of whether key is pressed
+    const [isKeyPressed, setIsKeyPressed] = useState(false);
+
+    // Create a `ref` that stores the latest `handler` function if provided
+    const latestHandler = useRef(handler ?? null);
+
+    // Update `latestHandler.current` when the `handler` changes.
+    // This ensures our `useEffect` below always gets the latest `handler` without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the `handler` is created from scratch inside it
+
+    // `useLayoutEffect` is used here to guarantee that the event handler
+    // reference is updated before any subsequent renders or event handling take place.
+    // Since there's a possibility that when using `useEffect`, at a certain moment,
+    // the handler might become outdated. This is because `useEffect` is asynchronous:
+    // its code executes after the browser finishes rendering. Consequently,
+    // the handler will be updated after the browser's initial rendering.
+    // In contrast, `useLayoutEffect` is synchronous, ensuring that its code executes
+    // after all DOM mutations but before the browser updates the interface
+    useLayoutEffect(() => {
+        // Check if `handler` provided
+        if (handler) {
+            // Update `latestHandler` when the `handler` (its reference) changes
+            latestHandler.current = handler;
+        }
+    }, [handler]);
+    // By using `useRef` and `useLayoutEffect`, this technique eliminates the need
+    // to memoize the handler outside the hook (in the component) via `useCallback`.
+    // It abstracts the optimization logic inside the hook, making it more convenient
+
+    // Set up an effect to attach event listeners for `keydown` and `keyup` events
+    // when the component mounts or when the `targetKey` changes
+    useEffect(() => {
+        // Define event handler functions to set the `isKeyPressed` state accordingly.
+        // By defining them within the effect, we avoid the need
+        // to include them in the dependency array
+
+        const downHandler = ({ key }: KeyboardEvent) => {
+            // If pressed key is a `targetKey`, then set to `true`
+            if (key === targetKey) {
+                setIsKeyPressed(true);
+
+                // Call handler function if provided
+                if (latestHandler.current) {
+                    latestHandler.current();
+                }
+            }
+        };
+
+        const upHandler = ({ key }: KeyboardEvent) => {
+            // If released key is a `targetKey`, then set to `false`
+            if (key === targetKey) {
+                setIsKeyPressed(false);
+            }
+        };
+
+        // Attach event listeners for `keydown` and `keyup` events to the window
+        window.addEventListener('keydown', downHandler);
+        window.addEventListener('keyup', upHandler);
+
+        // Return a cleanup function to remove event listeners
+        // when the component unmounts or when the `targetKey` changes
+        return () => {
+            window.removeEventListener('keydown', downHandler);
+            window.removeEventListener('keyup', upHandler);
+        };
+
+        // Include only the `targetKey` in the dependency array to ensure the `useEffect` runs when it changes.
+        // Although we use `latestHandler` inside `useEffect`, it's not necessary
+        // to include it in the dependencies array. `useEffect` knows that the reference to `latestHandler`
+        // doesn't change, so it won't re-run unless `targetKey` changes or the component unmounts
+    }, [targetKey]);
+
+    return isKeyPressed;
+};
+
+export default useKeyPress;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const isKeyPressed = useKeyPress(targetKey, handler?)
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'targetKey',
+                cells: [
+                    'string',
+                    'The proper key name to listen for keyboard presses.',
+                ],
+            },
+            {
+                head: 'handler (optional)',
+                cells: [
+                    '() => void',
+                    'A callback function to execute when the specified key is pressed.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'isKeyPressed',
+                cells: [
+                    'boolean',
+                    'A boolean value indicating whether the specified key is currently pressed.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Keyboard-Controlled Image Gallery
+
+This example demonstrates how to use keyboard navigation to control an interactive gallery. Instead of actual images, the `Square` component is used to simulate items in the gallery. Users can navigate through the items using the `ArrowLeft` and `ArrowRight` keys. The `useKeyPress` hook listens for these key presses and triggers the respective functions to move to the previous or next item. The currently selected item is visually highlighted, and the corresponding item's ID is displayed prominently.
+
+This approach enhances user experience by providing an intuitive way to navigate the gallery. Designed with accessibility in mind, the component ensures users can easily interact with the gallery using keyboard inputs.
+
+```tsx
+const KEY_PREV = 'ArrowLeft';
+const KEY_NEXT = 'ArrowRight';
+
+const initialItemId = 1;
+
+const items = loadData(4);
+
+const Gallery: FC = () => {
+    // State to track the current index of the image
+    const [currentItem, setCurrentItem] = useState(initialItemId);
+
+    // Function to handle moving to the previous image in the gallery
+    const handlePrev = () => {
+        if (currentItem === 1) return;
+
+        setCurrentItem((prev) => prev - 1);
+    };
+
+    // Function to handle moving to the next image in the gallery
+    const handleNext = () => {
+        if (currentItem === items.length) return;
+
+        setCurrentItem((prev) => prev + 1);
+    };
+
+    // Call the `useKeyPress` hook to handle the arrow keys presses
+
+    // Trigger `handlePrev` function when the `ArrowLeft` key is pressed
+    useKeyPress(KEY_PREV, handlePrev);
+
+    // Trigger `handleNext` function when the `ArrowRight` key is pressed
+    useKeyPress(KEY_NEXT, handleNext);
+
+    return (
+        <Layer title="Gallery">
+            <div className="flex flex-col gap-2">
+                <Square className="font-monoBrand pointer-events-none text-6xl font-bold">
+                    <span>{currentItem}</span>
+                </Square>
+                <div className="flex w-full space-x-2">
+                    {items.map((item) => (
+                        <Square
+                            className="pointer-events-none"
+                            key={item.id}
+                            colored={currentItem === item.id}
+                        >
+                            <span className="font-monoBrand text-3xl font-bold">
+                                {item.id}
+                            </span>
+                        </Square>
+                    ))}
+                </div>
+            </div>
+            <Message>
+                <span>Press one of the following keys on your keyboard:</span>
+                <div className="flex space-x-4 py-2">
+                    <Kbd id={KEY_PREV} />
+                    <Kbd id={KEY_NEXT} />
+                </div>
+            </Message>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseGallery />
+</ExampleWrapper>
+
+### Modal with Escape Key Handling
+
+This example demonstrates the creation of a modal component that incorporates keyboard accessibility and user experience enhancements. The `ModalWrapper` component listens for the `Escape` key press using the `useKeyPress` hook to close the modal, providing a convenient way for users to dismiss it without relying solely on mouse interactions. The `Container` component manages the modal's state, using the `isOpen` flag to conditionally render the modal. The modal itself features two close options: pressing the `Escape` key or clicking the "Close Modal" button. This design improves usability and accessibility, catering to a wide range of user preferences and needs.
+
+```tsx
+interface ModalProps {
+    onClose: () => void;
+}
+
+const KEY_CLOSE = 'Escape';
+
+const ModalWrapper: FC<ModalProps> = ({ onClose: handleClose }) => {
+    // Call the `useKeyPress` hook to handle the `Escape` key press and close the modal
+    useKeyPress(KEY_CLOSE, handleClose);
+
+    // Call the hook to prevent page scrolling when the modal component is mounted
+    useLockBodyScroll();
+
+    return (
+        <Modal>
+            <Message>
+                <span>
+                    Press the following key on your keyboard to close the modal
+                    window:
+                </span>
+                <Kbd id={KEY_CLOSE} />
+                <span>Or click the following button:</span>
+            </Message>
+            <Button onClick={handleClose}>Close Modal</Button>
+        </Modal>
+    );
+};
+
+const Container: FC = () => {
+    // State to track whether the modal is open or not
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Function to handle closing the modal
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    // Function to handle opening the modal
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <Button onClick={handleOpen}>Open Modal</Button>
+            </div>
+            {/* Conditional rendering of modal based on `isOpen` state  */}
+            {isOpen && <ModalWrapper onClose={handleClose} />}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseModal />
+</ExampleWrapper>
+
+### Quiz Answer Reveal with Keyboard Shortcut
+
+This example showcases an interactive quiz component that allows users to reveal answers dynamically by pressing a designated key (`Shift`). The `useKeyPress` hook is used to detect whether the `Shift` key is pressed. The `Container` component maintains the state for the current question index and provides navigation through a "Next Question" button.
+
+This implementation demonstrates how to create an engaging and intuitive user experience by leveraging keyboard interaction to enhance accessibility and interactivity. The design ensures ease of use while keeping the interface clean and focused.
+
+```tsx
+const KEY_SHOW_ANSWER = 'Shift';
+
+// Quiz data containing questions and answers
+const questions = loadData();
+
+const Container: FC = () => {
+    // State to track the current index of the question
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    // Call the `useKeyPress` hook without passing a callback function
+    // to detect whether the `Shift` key is pressed by returning the
+    // boolean value, which is then used for conditional rendering
+    const isShiftPressed = useKeyPress(KEY_SHOW_ANSWER);
+
+    // Function to handle moving to the next question in the quiz
+    const handleNext = () => {
+        if (currentIndex === questions.length - 1) {
+            setCurrentIndex(0);
+
+            return;
+        }
+
+        setCurrentIndex((prev) => prev + 1);
+    };
+
+    const currentQuestion = questions[currentIndex];
+
+    return (
+        <Layer title="Container">
+            <Text className="md:h-24">{currentQuestion.question}</Text>
+            <Text>
+                Answer: {isShiftPressed ? currentQuestion.answer : '⁉️😸⁉️'}
+            </Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleNext}>Next Question</Button>
+            </div>
+            <Message>
+                <span>
+                    Press the following key on your keyboard to reveal the
+                    correct answer:
+                </span>
+                <Kbd id={KEY_SHOW_ANSWER} />
+            </Message>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseQuiz />
+</ExampleWrapper>
+
+</ContentWrapper>

@@ -1,0 +1,389 @@
+import { CasePropDrilling } from './_features/case-prop-drilling';
+import { CaseContext } from './_features/case-context';
+import { CaseRestructured } from './_features/case-restructured';
+import { CaseStateManager } from './_features/case-state-manager';
+
+<ContentWrapper>
+Prop drilling — is the practice of passing a single property through multiple levels of components from parent to child. This approach is often used in React applications to pass data down the component tree. However, it can lead to difficulties in maintaining code and deteriorate performance when passing data through many levels.
+
+Ideally, it's best to avoid passing props more than two levels deep. Let's consider the problem with an example code that has 3 layers:
+
+```tsx
+interface GrandChildComponentProps {
+    data: string;
+}
+
+const GrandChildComponent: FC<GrandChildComponentProps> = ({ data }) => {
+    return (
+        <Layer
+            title="GrandChild"
+            colored
+        >
+            <Text>{data}</Text>
+        </Layer>
+    );
+};
+
+interface ChildComponentProps {
+    data: string;
+}
+
+const ChildComponent: FC<ChildComponentProps> = ({ data }) => {
+    return (
+        <Layer
+            colored
+            title="Child"
+        >
+            <GrandChildComponent data={data} />
+        </Layer>
+    );
+};
+
+interface ParentComponentProps {
+    data: string;
+}
+
+const ParentComponent: FC<ParentComponentProps> = ({ data }) => {
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent data={data} />
+        </Layer>
+    );
+};
+
+const initialData = 'Hello!';
+
+const dataToSet = 'Hello from the faraway `Container`!';
+
+const Container: FC = () => {
+    const [data, setData] = useState(initialData);
+
+    const isDataSet = data !== initialData;
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <Layer
+            title="Container"
+            colored
+        >
+            <ParentComponent data={data} />
+            <div className="flex w-full justify-center">
+                <Button
+                    disabled={isDataSet}
+                    onClick={handleSetData}
+                >
+                    {isDataSet ? 'Data Set' : 'Set Data'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CasePropDrilling />
+</ExampleWrapper>
+
+Although technically you can use as many layers as needed, it's important to remember that prop drilling can cause the following **issues**:
+
+-   **Performance:** Prop drilling can lead to unnecessary re-renders caused by updating props at each level. In React, any component that receives new props will re-render. Intermediate components that simply pass props further down will also re-render, which can negatively impact the performance of the application in the long run.
+
+-   **Support and Scalability:** The deeper the level of prop drilling, the more difficult it becomes to track how data is passed within the application. In an application with a deep component tree, when data is passed through many intermediate components, it becomes challenging to understand where the data originates from and where it's used. This complicates the understanding of the data structure and usage, making it difficult to support and extend the code. For example, if a new intermediate component needs to be added, all components above and below in the tree must be updated to maintain the new data structure. This can lead to multiple errors and increased testing time.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Approaches to Solve Prop Drilling Problem
+
+### React Context
+
+Using the `createContext` method and the `useContext` hook allows you to create and use contexts to pass data to deeper levels of components without the need to drill props through each level. This approach can be thought of as "teleporting" data from the top of the tree to any branch below. Let's see an example of how to solve the issue using this built-in React tool.
+
+We create a context using `createContext`, which is then used via the `useContext` hook to extract data placed in it at the top level. In `Container`, data is passed to `DataContext.Provider` through the `value` parameter, wrapping `ParentComponent`, allowing it and its child components to access this data. In this example, everything is contained in one file for simplicity and demonstration purposes. Of course, in a real project, each component should be created in a separate file.
+
+```typescript
+export const DataContext = createContext<string | null>(null);
+
+export const useDataContext = (): string => {
+    const context = useContext(DataContext);
+
+    if (!context) {
+        throw new Error(
+            '`useDataContext` must be used within a `DataProvider`'
+        );
+    }
+
+    return context;
+};
+```
+
+```tsx
+const GrandChildComponent: FC = () => {
+    const data = useDataContext();
+
+    return (
+        <Layer
+            title="GrandChild"
+            colored
+        >
+            <Text>{data}</Text>
+        </Layer>
+    );
+};
+
+const ChildComponent: FC = () => {
+    return (
+        <Layer
+            colored
+            title="Child"
+        >
+            <GrandChildComponent />
+        </Layer>
+    );
+};
+
+const ParentComponent: FC = () => {
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent />
+        </Layer>
+    );
+};
+
+const initialData = 'Hello!';
+
+const dataToSet = 'Hello from React Context!';
+
+const Container: FC = () => {
+    const [data, setData] = useState(initialData);
+
+    const isDataSet = data !== initialData;
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <Layer
+            title="Container"
+            colored
+        >
+            <DataContext.Provider value={data}>
+                <ParentComponent />
+            </DataContext.Provider>
+            <div className="flex w-full justify-center">
+                <Button
+                    disabled={isDataSet}
+                    onClick={handleSetData}
+                >
+                    {isDataSet ? 'Data Set' : 'Set Data'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseContext />
+</ExampleWrapper>
+
+### Restructuring Components
+
+Sometimes the problem can be solved by revising the hierarchy of components and redistributing functionality to minimize the depth of data passing. For example, if you have a component that simply passes data along, you can merge its functionality with a child or parent component, thus reducing the number of levels of data passing. In the example below, we eliminate the `GrandChildComponent` by placing its content directly inside `ChildComponent`:
+
+```tsx
+interface ChildComponentProps {
+    data: string;
+}
+
+const ChildComponent: FC<ChildComponentProps> = ({ data }) => {
+    return (
+        <Layer
+            colored
+            title="Child"
+        >
+            <Text>{data}</Text>
+        </Layer>
+    );
+};
+
+interface ParentComponentProps {
+    data: string;
+}
+
+const ParentComponent: FC<ParentComponentProps> = ({ data }) => {
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent data={data} />
+        </Layer>
+    );
+};
+
+const initialData = 'Hello!';
+
+const dataToSet = 'Hello from the nearby `Container`!';
+
+const Container: FC = () => {
+    const [data, setData] = useState(initialData);
+
+    const isDataSet = data !== initialData;
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <Layer
+            title="Container"
+            colored
+        >
+            <ParentComponent data={data} />
+            <div className="flex w-full justify-center">
+                <Button
+                    disabled={isDataSet}
+                    onClick={handleSetData}
+                >
+                    {isDataSet ? 'Data Set' : 'Set Data'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseRestructured />
+</ExampleWrapper>
+
+### Using State Managers
+
+In more complex applications, state management libraries (state managers) like Redux, MobX, or Zustand can be used to manage state. Although such solutions require significant overhead and may be excessive for simple applications, they're useful when it's necessary to synchronize state between multiple components or when one state depends on another. A state manager helps avoid prop drilling by providing global state accessible to any component without the need to drill props. This simplifies the structure of components and improves performance. Let's see how Zustand handles this:
+
+```typescript
+interface IDataStore {
+    data: string;
+    isDataSet: boolean;
+    setData: (newData: string) => void;
+    resetStore: () => void;
+}
+
+const zustandInitialData = 'Hello !';
+
+const initialData = {
+    data: zustandInitialData,
+    isDataSet: false,
+};
+
+const useDataStore = create<IDataStore>((set) => ({
+    ...initialData,
+    setData: (newData) => set({ data: newData, isDataSet: true }),
+    resetStore: () => set({ ...initialData }),
+}));
+```
+
+```tsx
+const dataToSet = 'Hello from Zustand!';
+
+const DataButton: FC = () => {
+    const setData = useDataStore((state) => state.setData);
+
+    const isDataSet = useDataStore((state) => state.isDataSet);
+
+    const handleResetStore = useDataStore((state) => state.resetStore);
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <div className="flex w-full justify-center space-x-4">
+            <Button
+                disabled={isDataSet}
+                onClick={handleSetData}
+            >
+                {isDataSet ? 'Data Set' : 'Set Data'}
+            </Button>
+            <Button
+                disabled={!isDataSet}
+                onClick={handleResetStore}
+            >
+                Reset store
+            </Button>
+        </div>
+    );
+};
+
+const GrandChildComponent: FC = () => {
+    const data = useDataStore((state) => state.data);
+
+    return (
+        <Layer
+            title="GrandChild"
+            colored
+        >
+            <Text>{data}</Text>
+        </Layer>
+    );
+};
+
+const ChildComponent: FC = () => {
+    return (
+        <Layer
+            colored
+            title="Child"
+        >
+            <GrandChildComponent />
+        </Layer>
+    );
+};
+
+const ParentComponent: FC = () => {
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent />
+        </Layer>
+    );
+};
+
+const Container: FC = () => {
+    return (
+        <Layer
+            title="Container"
+            colored
+        >
+            <ParentComponent />
+            <DataButton />
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseStateManager />
+</ExampleWrapper>
+
+</ContentWrapper>
+
+<ContentWrapper>
+Each of these approaches has its pros and cons. For example, React Context is well suited for small to medium-sized applications but can become cumbersome when scaled. On the other hand, a state manager provides powerful tools for state management but requires significant effort for setup and training. Restructuring components is not always suitable and may be impractical in some cases, as it may require significant changes to the architecture of the application and lead to code maintenance challenges. The choice of the appropriate tool depends on the specific requirements of your project and the structure of your application.
+
+It's important to remember that using prop drilling itself is not a mistake. It's a normal part of React development that only becomes a problem with excessive use (more than two levels deep). For example, for small applications or components with simple data, prop drilling may be entirely appropriate. Always strive to keep your code clean, readable, and easy to maintain.
+
+</ContentWrapper>

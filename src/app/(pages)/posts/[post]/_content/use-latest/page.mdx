@@ -1,0 +1,317 @@
+<ContentWrapper>
+## Explanation
+
+The `useLatest` custom React hook is a powerful utility designed for managing dynamic values, especially complex ones like objects or functions. Its primary function is to ensure that the most recent value is always available without causing unnecessary re-renders in the component tree. This capability is particularly useful in scenarios where frequent updates occur, but re-rendering the entire component is undesirable, such as in event handlers or asynchronous operations.
+
+This hook shines in cases where you need access to the latest value without affecting the rendering logic. By maintaining an up-to-date reference, `useLatest` enhances the performance of React applications by preventing unnecessary updates and streamlining the rendering process. This is particularly important when dealing with values that are recreated during parent component re-renders, especially when these values aren't memoized and are included in the dependency array of `useEffect` in a component or custom hook.
+
+A key feature of `useLatest` is its ability to keep the reference to the latest value consistent, ensuring efficiency even in scenarios involving heavy computations or complex state management. However, developers should use `useLatest` with an understanding of its behavior: updates to the value stored in its `.current` property don't trigger re-renders in JSX. Proper comprehension and utilization of `useLatest` can lead to efficient management of dynamic values while avoiding potential rendering inefficiencies.
+
+### Usage Cases
+
+-   **Event Handlers**: Keep the latest event handler function up-to-date without re-running `useEffect` on each render.
+-   **Asynchronous Operations**: Ensure that asynchronous callbacks always use the latest value or function reference.
+-   **Optimizing Expensive useEffect Calls**: Prevent `useEffect` from re-running unnecessarily when dependencies change frequently, especially when it's costly to execute the body of `useEffect` each time.
+-   **Maintaining References in Custom Hooks**: Integrate seamlessly into custom hooks to maintain up-to-date references without extra re-renders.
+-   **Handling Dynamic Props**: Ensure that props, especially those recreated on parent re-renders, are always current without causing additional renders.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useLatest = <T>(value: T): MutableRefObject<T> => {
+    // Create a `ref` that stores the latest value
+    const latestValue = useRef(value);
+
+    // `useLayoutEffect` is used here to guarantee that the value reference is updated
+    // before any subsequent renders or event handling take place.
+    // Since there's a possibility that when using `useEffect`, at a certain moment,
+    // the value might become outdated. This is because `useEffect` is asynchronous:
+    // its code executes after the browser finishes rendering. Consequently,
+    // the value will be updated after the browser's initial rendering.
+    // In contrast, `useLayoutEffect` is synchronous, ensuring that its code executes
+    // after all DOM mutations but before the browser updates the interface
+    useLayoutEffect(() => {
+        // Update `latestValue` when the `value` (its reference) changes
+        if (value) {
+            latestValue.current = value;
+        }
+    }, [value]);
+
+    // Returning a `ref` object instead of the actual value that is stored in `latestValue`.
+    // The `ref` object maintains the same reference, allowing to always access the latest value
+    // without causing re-renders, as `ref`s don't trigger re-renders when they're updated.
+    // Additionally, since `ref`s don't cause re-renders, they also don't trigger `useEffect`
+    // again if their value is used within it
+    return latestValue;
+};
+
+export default useLatest;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```typescript
+const latestHandler = useRef(value);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'value',
+                cells: ['T', 'The initial value to be stored and updated.'],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'latestValue',
+                cells: [
+                    'MutableRefObject<T>',
+                    'A mutable `ref` object that maintains the reference to the latest value provided to the hook.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Enhancing the useKeyPress Custom Hook
+
+This example demonstrates how the `useLatest` enhances the `useKeyPress` custom hook by refining the logic for storing the optional `handler` function passed through arguments. This optimization promotes code cleanliness and modularity, ensuring that each hook focuses on its specific responsibility. Such architectural clarity facilitates better code maintenance and scalability.
+
+_For a full understanding of this custom hook, check out the <PostLink id="use-key-press">`useKeyPress`</PostLink> article._
+
+#### Before Using useLatest Hook
+
+```typescript
+export const useKeyPress = (
+    targetKey: string,
+    handler?: () => void
+): boolean => {
+    const [isKeyPressed, setIsKeyPressed] = useState(false);
+
+    // Create a `ref` that stores the latest `handler` function if provided
+    const latestHandler = useRef(handler ?? null);
+
+    // Update `latestHandler.current` when the handler changes.
+    // This ensures our `useEffect` below always gets the latest handler without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the `handler` is created from scratch inside it
+    useLayoutEffect(() => {
+        // Check if `handler` provided
+        if (handler) {
+            // Update `latestHandler` when the `handler` (its reference) changes
+            latestHandler.current = handler;
+        }
+    }, [handler]);
+
+    useEffect(() => {
+        const downHandler = ({ key }: KeyboardEvent) => {
+            if (key === targetKey) {
+                setIsKeyPressed(true);
+
+                // Call handler function if provided
+                if (latestHandler.current) {
+                    latestHandler.current();
+                }
+            }
+        };
+
+        const upHandler = ({ key }: KeyboardEvent) => {
+            if (key === targetKey) {
+                setIsKeyPressed(false);
+            }
+        };
+
+        window.addEventListener('keydown', downHandler);
+        window.addEventListener('keyup', upHandler);
+
+        return () => {
+            window.removeEventListener('keydown', downHandler);
+            window.removeEventListener('keyup', upHandler);
+        };
+
+        // Although `latestHandler` is used within `useEffect`, it's not necessary
+        // to include it in the dependencies array. `useEffect` knows that the reference to `latestHandler`
+        // doesn't change, so it won't re-run unless `targetKey` changes or the component unmounts
+    }, [targetKey]);
+
+    return isKeyPressed;
+};
+```
+
+#### Using useLatest Hook
+
+```typescript
+export const useKeyPressWithHookInside = (
+    targetKey: string,
+    handler?: () => void
+): boolean => {
+    const [isKeyPressed, setIsKeyPressed] = useState(false);
+
+    // Use `useLatest` hook to obtain the reference to the latest `handler` function.
+    // The `handler` is conditionally passed into the custom hook
+    // since it's retrieved from the arguments and it's optional
+    const latestHandler = useLatest(handler ?? null);
+
+    useEffect(() => {
+        const downHandler = ({ key }: KeyboardEvent) => {
+            if (key === targetKey) {
+                setIsKeyPressed(true);
+
+                // Call handler function if provided
+                if (latestHandler.current) {
+                    latestHandler.current();
+                }
+            }
+        };
+
+        const upHandler = ({ key }: KeyboardEvent) => {
+            if (key === targetKey) {
+                setIsKeyPressed(false);
+            }
+        };
+
+        window.addEventListener('keydown', downHandler);
+        window.addEventListener('keyup', upHandler);
+
+        return () => {
+            window.removeEventListener('keydown', downHandler);
+            window.removeEventListener('keyup', upHandler);
+        };
+
+        // Since `useEffect` is unaware that `latestHandler` is an object returned
+        // by `useRef` (which implies that its reference is immutable) within the
+        // custom hook `useLatest`, it needs to be listed in the dependencies array.
+        // Consequently, the `useEffect` body won't execute until `targetKey` changes
+        // or the component unmounts because the reference to `latestHandler` remains unchanged
+    }, [targetKey, latestHandler]);
+
+    return isKeyPressed;
+};
+```
+
+### Enhancing the useOnClickOutside Custom Hook
+
+This example illustrates how the `useLatest` optimizes the `useOnClickOutside` custom hook by managing the reference to the latest `handler` function. By integrating `useLatest`, the hook ensures that the handler function remains up-to-date without causing unnecessary re-renders. This refinement promotes cleaner code and maintains the hook's purpose of detecting clicks outside a specified element, enhancing code readability and maintainability.
+
+_For a full understanding of this custom hook, check out the <PostLink id="use-on-click-outside">`useOnClickOutside`</PostLink> article._
+
+#### Before Using useLatest Hook
+
+```typescript
+export const useOnClickOutside = <T extends HTMLElement>(
+    element: RefObject<T>,
+    handler: () => void,
+    attached = true
+): void => {
+    // Create a `ref` that stores the latest `handler` function
+    const latestHandler = useRef(handler);
+
+    // Update `latestHandler.current` when the `handler` changes.
+    // This ensures our `useEffect` below always gets the latest handler without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the `handler` is created from scratch inside it
+    useLayoutEffect(() => {
+        // Update `latestHandler` when the `handler` (its reference) changes
+        latestHandler.current = handler;
+    }, [handler]);
+
+    useEffect(() => {
+        if (!attached || !element.current) return;
+
+        // Create an event listener that calls the handler function stored in the `ref`
+        const handleClick = (e: Event) => {
+            if (
+                latestHandler &&
+                element.current &&
+                !element.current.contains(e.target as Node)
+            ) {
+                latestHandler.current();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClick);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+        };
+
+        // Although `latestHandler` is used within `useEffect`, it's not necessary
+        // to include it in the dependencies array. `useEffect` knows that the reference to `latestHandler`
+        // doesn't change, so it won't re-run unless `element` or `attached` changes or the component unmounts
+    }, [element, attached]);
+};
+```
+
+#### Using useLatest Hook
+
+```typescript
+export const useOnClickOutsideWithHookInside = <T extends HTMLElement>(
+    element: RefObject<T>,
+    handler: () => void,
+    attached = true
+): void => {
+    // Use `useLatest` hook to obtain the reference to the latest `handler` function
+    const latestHandler = useLatest(handler);
+
+    useEffect(() => {
+        if (!attached || !element.current) return;
+
+        // Create an event listener that calls the handler function stored in the `ref`
+        const handleClick = (e: Event) => {
+            if (
+                latestHandler &&
+                element.current &&
+                !element.current.contains(e.target as Node)
+            ) {
+                latestHandler.current();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClick);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+        };
+
+        // Since `useEffect` is unaware that `latestHandler` is an object returned
+        // by `useRef` (which implies that its reference is immutable) within the
+        // custom hook `useLatest`, it needs to be listed in the dependencies array.
+        // Consequently, the `useEffect` body won't execute until `element` or `attached` changes
+        // or the component unmounts because the reference to `latestHandler` remains unchanged
+    }, [element, attached, latestHandler]);
+};
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+Following the same principle, part of the logic in two other custom hooks, for which we have separate articles — <PostLink id="use-event-listener">`useEventListener`</PostLink> and <PostLink id="use-intersection-observer">`useIntersectionObserver`</PostLink>, can also be replaced with `useLatest`.
+
+</ContentWrapper>

@@ -1,0 +1,312 @@
+import { CasePersonBio } from './_features/case-person-bio';
+
+<ContentWrapper>
+
+## Number of Props
+
+The answer to the question about the number of props in a component is subjective. The number of props is related to the number of variables used by the component. The more props a component receives, the higher its responsibility.
+
+A large number of props may indicate excessive functionality of the component. If a component takes more than five props, it's recommended to consider splitting it. In some cases, a component may require a lot of data, such as a text field needing numerous props. However, this may also indicate a need to separate some logic into a different component.
+
+It's important to note that the more props a component receives, the more frequently it will re-render.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Destructuring Props
+
+Most components in React are functions that take an object containing all the passed props as an argument and return JSX markup. When declaring a functional component, it's written as a function that takes this object. In a regular function, arguments are passed directly, and with components, it makes sense to adhere to a similar approach. You should not use only the `props` object in every component, especially if many props were passed, as this approach complicates the code and its readability. Instead, it's more effective to destructure and use the values explicitly within the component.
+
+Destructuring props is a convenient way to "unpack" the passed props from the `props` object and assign them directly to variables. This improves code readability, as it allows access to props without the need to constantly use the `props` object.
+
+### Example
+
+To better understand the issue, here is an example:
+
+```tsx
+interface ChildComponentProps {
+    title: string;
+    content: string;
+}
+
+const ChildComponent: FC<ChildComponentProps> = (props) => {
+    return (
+        <div>
+            <h3>{props.title}</h3>
+            <p>{props.content}</p>
+        </div>
+    );
+};
+
+const ParentComponent: FC = () => {
+    const data = {
+        title: 'Title',
+        content: 'Paragraph content',
+    };
+
+    return (
+        <ChildComponent
+            title={data.title}
+            content={data.content}
+        />
+    );
+};
+```
+
+In this example, props are used without destructuring. Note that each time you need to use values from the props, you need to access them through the `props` object. To get the value of a specific prop, you need to access the corresponding property of the object, such as `props.title` in this example.
+
+This approach can be useful when you need to pass all props to a child component or keep them together in one object for further processing. However, if each passed value is used separately, the code in JSX becomes less readable and increases the amount of repetition. The situation becomes more complicated when you need to manipulate the passed props or when they have nested objects.
+
+Now let's take a look at the same example with destructuring props.
+
+```tsx
+interface ChildComponentProps {
+    title: string;
+    content: string;
+}
+
+const ChildComponent: FC<ChildComponentProps> = ({ title, content }) => {
+    return (
+        <div>
+            <h3>{title}</h3>
+            <p>{content}</p>
+        </div>
+    );
+};
+
+const ParentComponent: FC = () => {
+    const data = {
+        title: 'Title',
+        content: 'Paragraph content',
+    };
+
+    return (
+        <ChildComponent
+            title={data.title}
+            content={data.content}
+        />
+    );
+};
+```
+
+Here, the `props` object is destructured right in the function definition, making access to the props more convenient. The required values are explicitly specified in the function parameters — `title` and `content` are extracted from the `props` object and used directly. This improves code readability, making it more concise and understandable, as it clearly shows which props the component accepts.
+
+In cases where a component takes many props, destructuring helps better organize the code and reduce the likelihood of errors related to accessing props through the object. With destructuring, if something is written incorrectly, it's immediately visible and easier to fix.
+
+Using destructuring of props makes the code more readable and easier to maintain. This is especially useful in larger projects where components may take many props, and the need to constantly access the `props` object can be tedious and increase the risk of errors.
+
+Thus, when designing components in React, consider destructuring props as a standard practice, unless there is a need to pass or process props as a whole object. This improves readability and simplifies working with the code, which is especially important in team development and when scaling applications.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Default Props
+
+When creating components, it's often necessary to make some arguments optional. In such cases, a good practice is to set default values for these arguments. This is especially important if the component's logic doesn't check for the presence of these arguments before using them, as this could result in an error due to receiving `undefined` if the optional prop was not passed.
+
+Setting default values helps avoid potential errors and improves code readability and maintainability, making its behavior more predictable and stable.
+
+An effective way to set default values is to specify them directly during prop destructuring. This approach allows developers to immediately see which values will be used by default.
+
+### Example
+
+```tsx
+interface PersonBioProps {
+    nickname: string;
+    firstName?: string;
+    lastName?: string;
+}
+
+const PersonBio: FC<PersonBioProps> = ({
+    nickname,
+    firstName = 'John',
+    lastName = 'Doe',
+}) => {
+    const fullName = `${firstName} ${lastName}`;
+
+    return (
+        <Text>
+            Nickname: {nickname}
+            <br />
+            Full Name: {fullName}
+        </Text>
+    );
+};
+
+const data1 = 'jod76';
+
+const data2 = {
+    nickname: 'lilol',
+    firstName: 'Lilo',
+    lastName: 'Olil',
+};
+
+const Container: FC = () => {
+    const { nickname, firstName, lastName } = data2;
+
+    return (
+        <Layer title="Container">
+            {/* Default values are used for `firstName` and `lastName` */}
+            <PersonBio nickname={data1} />
+            {/* Passed values are used for `firstName` and `lastName` */}
+            <PersonBio
+                nickname={nickname}
+                firstName={firstName}
+                lastName={lastName}
+            />
+        </Layer>
+    );
+};
+```
+
+In this example, default values for `firstName` and `lastName` are set during prop destructuring. This allows the component to function correctly even if these props were not passed, avoiding potential errors and improving component stability.
+
+Here's what the code will output if **no default** value is set:
+
+<ExampleWrapper isExpectedOutput={false}>
+    <CasePersonBio />
+</ExampleWrapper>
+
+Instead of the `fullName` variable, which is computed during the component's render, "undefined undefined" will be displayed because the arguments were not passed, and there is no check for their presence. This is an undesirable result that should be avoided.
+
+Following this practice allows creating more reliable and predictable components, ultimately improving code quality and maintainability in the long term.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Passing an Object Instead of Primitives
+
+An effective way to reduce the number of passed props is to pass an object instead of primitives. A common practice is to group related data into a single object instead of passing each value separately. This simplifies data management and allows for easier addition of new props in the future.
+
+### Example
+
+Consider an example in which a component is passed many individual props.
+
+```tsx
+type IUser = {
+    nickname: string;
+    firstName: string;
+    lastName: string;
+    age: number;
+};
+
+interface PersonBioProps extends IUser {
+    isVisible: boolean;
+}
+
+const PersonBio: FC<PersonBioProps> = ({
+    nickname,
+    firstName,
+    lastName,
+    age,
+    isVisible,
+}) => {
+    if (!isVisible) return null;
+
+    const fullName = `${firstName} ${lastName}`;
+
+    return (
+        <di>
+            <span>Nickname: {nickname}</span>
+            <span>Full Name: {fullName}</span>
+            <span>Age: {age}</span>
+        </di>
+    );
+};
+
+interface UserProfileProps {
+    user: IUser;
+}
+
+const UserProfile: FC<UserProfileProps> = ({ user }) => {
+    const [isBioVisible, setIsBioVisible] = useState(false);
+
+    const handleToggle = () => {
+        setIsBioVisible((prev) => !prev);
+    };
+
+    return (
+        <div>
+            <button onClick={handleToggle}>
+                {isBioVisible ? 'Hide' : 'Show'}
+            </button>
+            <PersonBio
+                nickname={user.nickname}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                age={user.age}
+                isVisible={isBioVisible}
+            />
+            <span>Some additional content</span>
+        </div>
+    );
+};
+```
+
+In this example, the `PersonBio` component takes `isVisible` and many individual related props — `nickname`, `firstName`, `lastName`, `age`. While this works, passing all these values separately can become cumbersome, especially if the number of props increases. In the `UserProfile` component, user data is already passed as an object (`user`), so this object can be passed entirely to the `PersonBio` component, making the code cleaner and easier to maintain in the long run.
+
+An alternative approach using a single object to pass all related data.
+
+```tsx
+type IUser = {
+    nickname: string;
+    firstName: string;
+    lastName: string;
+    age: number;
+};
+
+interface PersonBioProps {
+    user: IUser;
+    isVisible: boolean;
+}
+
+const PersonBio: FC<PersonBioProps> = ({ user, isVisible }) => {
+    if (!isVisible) return null;
+
+    const { nickname, firstName, lastName, age } = user;
+
+    const fullName = `${firstName} ${lastName}`;
+
+    return (
+        <div>
+            <span>Nickname: {nickname}</span>
+            <span>Full Name: {fullName}</span>
+            <span>Age: {age}</span>
+        </div>
+    );
+};
+
+interface UserProfileProps {
+    user: IUser;
+}
+
+const UserProfile: FC<UserProfileProps> = ({ user }) => {
+    const [isBioVisible, setIsBioVisible] = useState(false);
+
+    const handleToggle = () => {
+        setIsBioVisible((prev) => !prev);
+    };
+
+    return (
+        <div>
+            <button onClick={handleToggle}>
+                {isBioVisible ? 'Hide' : 'Show'}
+            </button>
+            <PersonBio
+                user={user}
+                isVisible={isBioVisible}
+            />
+            <span>Some additional content</span>
+        </div>
+    );
+};
+```
+
+Here, the `PersonBio` component takes a `user` object containing the same related four props. This approach simplifies the prop structure and makes the code more readable and maintainable.
+
+Thus, passing a single object instead of several primitives helps better organize the code and makes it easier to maintain. This approach not only makes the code cleaner and more structured but also reduces the likelihood of errors related to data passing. In the long run, it also facilitates application scalability.
+
+</ContentWrapper>

@@ -1,0 +1,9 @@
+{
+    "title": "Component Props",
+    "description": "Learn how to work with React component props! Explore destructuring, default props, and passing objects instead of primitives to create more efficient and readable components.",
+    "section": "best practices",
+    "last_updated_date": "15.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

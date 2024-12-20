@@ -1,0 +1,79 @@
+<ContentWrapper>
+
+In modern frontend development, the concept of component mental models is often used to structure code and improve its maintainability. These models help developers manage the state and logic of an application more effectively, making the code more modular and maintainable. In this article, we will compare traditional and modern approaches.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Containers and Presentational Components
+
+This traditional model divides components into two groups:
+
+### Presentational Components (or "Dumb" Components)
+
+    - Don't contain state or logic.
+    - Receive data through props from parent components.
+    - Responsible for displaying data.
+
+### Container Components (or "Smart" Components)
+
+    - Contain state and business logic.
+    - Make requests to fetch data.
+    - Manage the application's state.
+
+This approach is reminiscent of the MVC pattern used in server-side applications, where logic and presentation are separated. However, in the context of modern client-side applications, this approach can lead to problems and requires additional clarifications and adjustments.
+
+### Limitations of the Traditional Approach
+
+Dividing components into "smart" and "dumb" has its drawbacks. When all application logic is concentrated in a few containers, these components can become too bloated and difficult to maintain. This is especially noticeable in large applications, where maintaining and refactoring code can become practically impossible.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Modern Approach
+
+To improve code quality and ease of maintenance, it's important to redistribute logic and state among components. Instead of the traditional division into "smart" and "dumb" components, this approach suggests dividing components into two groups:
+
+### Components with State
+
+    - Hold the state necessary for their operation.
+    - Responsible for managing the state and business logic related to their functionality.
+
+### Stateless Components
+
+    - Receive data through props.
+    - Responsible for displaying data.
+    - Handle user interactions through passed callbacks, the logic of which is implemented in higher-level stateful components.
+    - Don't contain their own logic.
+
+The main difference between the traditional and modern approaches is that in the modern approach, state and logic are distributed among a larger number of components, which helps avoid excessive complexity and improves code modularity.
+
+### Principles of State Placement
+
+One of the key principles of the modern approach is to place data as close as possible to the component that uses it. This simplifies state management and improves code readability. For example, when using a GraphQL client, data can be fetched directly in the component that displays it, even if it isn't a top-level component.
+
+### Example
+
+Consider a simple form example:
+
+-   `Form` – a component that contains the form data and manages its state.
+-   `Input` – a component that receives value through props and calls callback on `onchange` event.
+-   `Button` – a component that notifies the form of the need to submit data.
+
+Who is responsible for form validation? If we assign it to the input field, it will start handling business logic, which leads to mixing responsibilities. Instead, it's better to keep `Input` as a stateless component and assign validation to the `Form` component. This way, the form will send error messages to input fields and manage their state.
+
+### Advantages of the Modern Approach
+
+-   **Improved Modularity:** Components are clearly divided by responsibilities.
+-   **Better Maintainability:** Code becomes more readable and easier to maintain.
+-   **Ease of Testing:** Components can be tested independently, simplifying the development process.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+In conclusion, component mental models help structure code and make applications more reliable and easier to maintain. By following modern approaches to logic separation, you can significantly improve the quality and stability of your code.
+
+</ContentWrapper>

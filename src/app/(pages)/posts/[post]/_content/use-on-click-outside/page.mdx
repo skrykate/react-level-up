@@ -1,0 +1,283 @@
+import { CaseModal } from './_features/case-modal';
+import { CaseHamburgerMenu } from './_features/case-hamburger-menu';
+
+<ContentWrapper>
+## Explanation
+
+The custom hook `useOnClickOutside` serves as a practical tool for managing interactions that occur outside a specified element within React applications. One of its primary use cases is when you need to trigger certain actions or UI changes when a user clicks outside a particular component.
+
+By encapsulating the detection of external clicks, this hook executes the corresponding handler function, enhancing code modularity and reducing boilerplate in components. It listens for user interactions with the DOM and identifies whether they occur outside the referenced element, centralizing the logic for handling such events.
+
+This hook leverages a combination of `useRef`, `useEffect`, and `useLayoutEffect` to ensure consistent performance and correct behavior, even in dynamic React environments. `useEffect` handles attaching and cleaning up event listeners, ensuring the implementation is both robust and resource-efficient.
+
+### Usage Cases
+
+-   **Closing Modals**: Easily manage modal windows by automatically closing them when clicking outside, enhancing user experience and interaction.
+-   **Tooltip Visibility Control**: Manage tooltip visibility by toggling them open or closed with clicks, while ensuring they automatically close when clicking outside the tooltip area. This enhances UI clarity and provides a seamless user experience.
+-   **Menu Management**: Effortlessly handle menu closure when clicking outside the menu component, providing seamless navigation for users.
+-   **Popover Interaction**: Enhance popover functionality by automatically closing popovers when clicking outside, streamlining user interaction.
+-   **Dropdown Management**: Simplify dropdown behavior by closing it when clicking outside the dropdown area, ensuring smooth user interaction.
+-   **Dialog Handling**: Seamlessly manage dialogs by closing them when clicking outside, offering intuitive dialog interaction for users.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Creation
+
+```typescript
+const useOnClickOutside = <T extends HTMLElement>(
+    element: RefObject<T>,
+    handler: () => void, // Function to be called when a click outside the element occurs
+    attached = true // Flag to determine whether the event listener should be attached or not
+): void => {
+    // Create a `ref` that stores the latest `handler` function
+    const latestHandler = useRef(handler);
+
+    // Update `latestHandler.current` when the handler changes.
+    // This ensures our `useEffect` below always gets the latest handler without
+    // needing to pass it in its dependencies array,
+    // which would cause the `useEffect` to re-run after every component render
+    // in case the `handler` is created from scratch inside it
+
+    // `useLayoutEffect` is used here to guarantee that the event handler
+    // reference is updated before any subsequent renders or event handling take place.
+    // Since there's a possibility that when using `useEffect`, at a certain moment,
+    // the handler might become outdated. This is because `useEffect` is asynchronous:
+    // its code executes after the browser finishes rendering. Consequently,
+    // the handler will be updated after the browser's initial rendering.
+    // In contrast, `useLayoutEffect` is synchronous, ensuring that its code executes
+    // after all DOM mutations but before the browser updates the interface
+    useLayoutEffect(() => {
+        // Update `latestHandler` when the `handler` (its reference) changes
+        latestHandler.current = handler;
+    }, [handler]);
+    // By using `useRef` and `useLayoutEffect`, this technique eliminates the need
+    // to memoize the handler outside the hook (in the component) via `useCallback`.
+    // It abstracts the optimization logic inside the hook, making it more convenient
+
+    // Set up an effect to attach an event listener to the document
+    // to track clicks outside the specified element.
+    useEffect(() => {
+        // If the event listener should not be attached or there is no valid element, do nothing
+        if (!attached || !element.current) return;
+
+        // Create an event listener that calls the handler function stored in the `ref`
+        const handleClick = (e: Event) => {
+            // If a handler function and a reference to the element are defined,
+            // and the click occurred outside the element, invoke the handler function
+            if (
+                latestHandler &&
+                element.current &&
+                !element.current.contains(e.target as Node)
+            ) {
+                latestHandler.current();
+            }
+        };
+
+        // Attach event listener for `mousedown` event to the `document`
+        document.addEventListener('mousedown', handleClick);
+
+        // Remove the event listener in the cleanup function to ensure proper
+        // resource release and prevent memory leaks associated with the event
+        // listener added during the component's lifecycle
+
+        // The cleanup function is triggered when the component unmounts or
+        // one of the dependencies changes
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+        };
+
+        // Include `element` and `attached` in the dependency array to ensure the `useEffect` runs when they change.
+        // This guarantees that the event listener will be set up or removed based on changes in these values.
+        // Although we use `latestHandler` inside `useEffect`, it's not necessary
+        // to include it in the dependencies array. `useEffect` knows that the reference to `latestHandler`
+        // doesn't change, so it won't re-run unless `element` and/or `attached` change or the component unmounts
+    }, [element, attached]);
+};
+
+export default useOnClickOutside;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+useOnClickOutside(elementRef, handler, attached?);
+```
+
+To utilize the `useOnClickOutside` hook in a component, simply call it within the component's function body during rendering.
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'elementRef',
+                cells: [
+                    'RefObject<HTMLElement>',
+                    'Reference to the DOM element to monitor for clicks outside.',
+                ],
+            },
+            {
+                head: 'handler',
+                cells: [
+                    '() => void',
+                    'Function to be called when a click outside the element occurs.',
+                ],
+            },
+            {
+                head: 'attached (optional)',
+                cells: [
+                    'boolean',
+                    'Flag indicating whether the event listener should be attached or not. Default value is `true`.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+This hook doesn't return any value.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Dropdown Menu with Outside Click Handling
+
+This example demonstrates how to use the custom hook `useOnClickOutside` to handle menu closure when clicking outside the component. By attaching the hook to the menu component's DOM element reference, it listens for clicks outside the menu and automatically closes it, enhancing user experience and interaction within the React application.
+
+```tsx
+const menuItems = loadData(3);
+
+const Container: FC = () => {
+    // State to track whether the menu is open or not
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Creating a reference to be attached to the DOM element (menu container)
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    // Function to handle button click to toggle menu visibility
+    const handleToggle = () => {
+        // Toggle the `isOpen` state to the opposite value
+        setIsOpen((prev) => !prev);
+    };
+
+    // Function to handle closing the menu
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    const handleClick = () => {};
+
+    // Call the `useOnClickOutside` hook to handle clicks outside the menu
+    useOnClickOutside(ref, handleClose, isOpen);
+
+    return (
+        <Layer title="Container">
+            <div className="flex items-center justify-center">
+                <div
+                    className="relative w-14"
+                    ref={ref}
+                >
+                    <button
+                        onClick={handleToggle}
+                        className="rlu__focus relative flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500 text-white"
+                    >
+                        {/* Render a hamburger or close icon based on `isOpen` state */}
+                        {isOpen ? <IconClose /> : <IconOpen />}
+                    </button>
+                    {/* Conditional rendering of menu based on `isOpen` state */}
+                    {isOpen && (
+                        <div className="absolute -top-2 left-14 w-40 p-2">
+                            <List
+                                items={menuItems}
+                                onClick={handleClick}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseHamburgerMenu />
+</ExampleWrapper>
+
+### Modal with Outside Click Handling
+
+This example demonstrates how to implement a modal that closes when the user clicks outside of it. The `useOnClickOutside` custom hook is used to detect clicks outside the modal's content area and trigger the closing function. A `ref` is created and assigned to the modal's DOM element, allowing the hook to track clicks outside of its boundaries. This approach enhances the user experience by providing an intuitive way to dismiss the modal. Additionally, the modal can be closed using a dedicated "Close Modal" button, offering multiple options for interaction.
+
+```tsx
+interface ModalProps {
+    onClose: () => void;
+}
+
+const ModalWrapper: FC<ModalProps> = ({ onClose: handleClose }) => {
+    // Creating a reference to be attached to the DOM element
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    // Call the `useOnClickOutside` hook to handle clicks outside the modal
+    useOnClickOutside(ref, handleClose);
+
+    // Call the `useLockBodyScroll` hook to prevent page scrolling when the component is mounted
+    useLockBodyScroll();
+
+    return (
+        <Modal
+            // Assigning the `ref` to the element, allowing it to be tracked by the `useOnClickOutside` hook
+            ref={ref}
+        >
+            <Message>
+                <span>
+                    Click the dark area of the screen to close the modal window.
+                </span>
+                <span>Or click the following button:</span>
+            </Message>
+            <Button onClick={handleClose}>Close Modal</Button>
+        </Modal>
+    );
+};
+
+const Container: FC = () => {
+    // State to track whether the modal is open or not
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Function to handle closing the modal
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    // Function to handle opening the modal
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <Button onClick={handleOpen}>Open Modal</Button>
+            </div>
+            {/* Conditional rendering of modal based on `isOpen` state  */}
+            {isOpen && <ModalWrapper onClose={handleClose} />}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseModal />
+</ExampleWrapper>
+
+</ContentWrapper>

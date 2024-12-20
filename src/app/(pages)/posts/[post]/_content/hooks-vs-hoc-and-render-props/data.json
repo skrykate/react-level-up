@@ -1,0 +1,9 @@
+{
+    "title": "Hooks vs HOCs and Render Props",
+    "description": "Compare React patterns for enhancing components: Higher-Order Components (HOCs), Render Props, and Hooks. Learn the drawbacks of HOCs and Render Props, and discover why Hooks are the modern, more efficient solution.",
+    "section": "best practices",
+    "last_updated_date": "20.05.24",
+    "flags": {
+        "showCodeNotice": false
+    }
+}

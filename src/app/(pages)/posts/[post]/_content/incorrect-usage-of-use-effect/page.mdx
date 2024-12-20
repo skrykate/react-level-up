@@ -1,0 +1,181 @@
+<ContentWrapper>
+    The `useEffect` hook is likely one of the first hooks a React developer
+    learns about. In the era of class components, `componentDidMount` was a
+    common lifecycle function used to assign event listeners. In functional
+    components, this role was taken over by `useEffect`. However, incorrect
+    usage of the `useEffect` hook can lead to the creation of multiple event
+    listeners, ultimately degrading performance and causing unexpected bugs.
+</ContentWrapper>
+
+<ContentWrapper>
+
+## The main issues with incorrect useEffect usage
+
+-   **Creating multiple event listeners:** When `useEffect` is called without dependencies or with incorrect dependencies, it may trigger on every component render. This results in the creation of new event listeners each time, without removing the old ones. As a result, more and more event listeners are created on each render, slowing down the application and leading to memory leaks.
+-   **Lack of effect cleanup:** If a cleanup function is not provided, old event listeners aren't removed, also causing memory leaks. The cleanup function should be returned from the function passed to `useEffect`, and it will be called before each subsequent effect run, when one of the dependencies in the dependency array changes, and when the component is unmounted.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Practical advices
+
+### Use dependencies correctly
+
+Always specify reactive values (such as props, state, and other values declared inside the component) in the dependencies array. These values are recalculated during rendering, can change due to a re-render, and participate in the React data flow. Including them in the dependencies ensures that the code inside `useEffect` runs only when these values change.
+
+This practice helps avoid unnecessary re-runs of the effect. It's also important to understand the behavior of `useEffect` depending on the dependencies array:
+
+-   If no dependencies array is specified, the code inside `useEffect` runs on every render.
+-   If an empty dependencies array is specified, the code will run only once — when the component is mounted.
+
+Let's take a look at an example:
+
+```tsx
+interface ContainerProps {
+    selectedBgColor: string;
+}
+
+const Container: FC<ContainerProps> = ({ selectedBgColor }) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!containerRef || !containerRef.current) {
+            return;
+        }
+
+        if (selectedBgColor === 'gray') {
+            containerRef.current.classList.add('gray_bg');
+        } else {
+            containerRef.current.classList.remove('gray_bg');
+        }
+    }, [selectedBgColor]);
+
+    return <div ref={containerRef}></div>;
+};
+```
+
+In this example, the `useEffect` hook is used to update the class of a DOM element based on the value of the `selectedBgColor` prop.
+
+-   The effect re-runs only when `selectedBgColor` changes, ensuring that unnecessary updates are avoided. For instance, if the component re-renders because its parent re-renders but `selectedBgColor` remains the same, the effect will not re-run.
+-   The inclusion of `selectedBgColor` in the dependencies array is crucial. Since it's a reactive value used inside `useEffect`, omitting it could lead to stale or incorrect behavior.
+
+On the other hand, `containerRef` is **not** included in the dependencies array because its reference remains stable across renders. This is a key consideration when working with refs, as they don't trigger re-renders or updates.
+
+### Effect cleanup
+
+Always include a cleanup function in effects that create or modify global states or subscribe to events. The cleanup function, defined after the `return` keyword, is executed before the effect runs again — either when the component unmounts or when a dependency changes. This practice prevents memory leaks, avoids unintended behavior, and ensures the application functions correctly.
+
+For example, the following demonstrates how to use `useEffect` to handle a window resize event and clean up the event listener when the component unmounts:
+
+```tsx
+useEffect(() => {
+    const handleResize = () => {
+        console.log('Resized');
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+        window.removeEventListener('resize', handleResize);
+    };
+}, []);
+```
+
+This approach ensures the event listener is properly removed and avoids potential memory leaks.
+
+### Decompose effects
+
+If `useEffect` performs multiple unrelated tasks, it's better to split them into separate `useEffect` hooks, each with its own appropriate dependencies. This not only makes the code more readable and manageable but also helps avoid unnecessary re-runs of code inside `useEffect`. This is especially important if one of the values specified in the dependencies array changes frequently, while the logic associated with another value is complex.
+
+Let's consider an example:
+
+```tsx
+interface ContainerProps {
+    selectedBgColor: string;
+}
+
+const Container: FC<ContainerProps> = ({ selectedBgColor }) => {
+    const [state, setState] = useState(true);
+
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!containerRef || !containerRef.current) {
+            return;
+        }
+
+        if (selectedBgColor === 'gray') {
+            containerRef.current.classList.add('gray_bg');
+        } else {
+            containerRef.current.classList.remove('gray_bg');
+        }
+
+        if (state) {
+            // Here is some logic that uses a state variable
+        }
+    }, [selectedBgColor, state]);
+
+    const handleClick = () => {
+        setState((prev) => !prev);
+    };
+
+    return (
+        <div ref={containerRef}>
+            <button onClick={handleClick}>Set State</button>
+        </div>
+    );
+};
+```
+
+Here, `useEffect` handles two reactive values that are not logically related. A change in the `state` variable doesn't affect the class modification logic, which depends solely on the `selectedBgColor` prop. If the `state` variable changes frequently and triggers more complex operations, the application's performance could degrade. Therefore, a better approach would be to split this single `useEffect` into two separate ones:
+
+```tsx
+interface ContainerProps {
+    selectedBgColor: string;
+}
+
+const Container: FC<ContainerProps> = ({ selectedBgColor }) => {
+    const [state, setState] = useState(true);
+
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!containerRef || !containerRef.current) {
+            return;
+        }
+
+        if (selectedBgColor === 'gray') {
+            containerRef.current.classList.add('gray_bg');
+        } else {
+            containerRef.current.classList.remove('gray_bg');
+        }
+    }, [selectedBgColor]);
+
+    useEffect(() => {
+        if (state) {
+            // Some logic based on the state variable
+        }
+    }, [state]);
+
+    const handleClick = () => {
+        setState((prev) => !prev);
+    };
+
+    return (
+        <div ref={containerRef}>
+            <button onClick={handleClick}>Set State</button>
+        </div>
+    );
+};
+```
+
+In this example, the `useEffect` hook is split into two separate hooks, making the code more organized and clear. The first effect handles the addition/removal of the class based on the `selectedBgColor` value, while the second effect manages logic tied to the internal `state` of the component. This structure improves performance by ensuring that each effect runs only when its specific dependencies change, avoiding unnecessary re-renders and making the code easier to maintain.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+Correct usage of the `useEffect` hook is critical for creating efficient and stable React applications. Understanding when and how to use dependencies, how to clean up effects, and when to split logic helps avoid common mistakes and improves the performance of your application. Pay attention to these aspects, and your components will work predictably and efficiently.
+
+</ContentWrapper>

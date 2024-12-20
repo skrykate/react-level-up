@@ -1,0 +1,204 @@
+import { CaseTermCard } from './_features/case-term-card';
+import { CaseMenu } from './_features/case-menu';
+import { CaseLongTextBlock } from './_features/case-long-text-block';
+
+<ContentWrapper>
+
+## Explanation
+
+Toggling state between `true` and `false` is a common requirement in React applications. Whether it's showing or hiding modals, toggling UI component visibility, or responding to user interactions, `useToggle` can make handling these scenarios much simpler.
+
+It simplifies the process of toggling boolean values in React components. The hook accepts an initial boolean value and provides a current state and a function to effortlessly toggle it between `true` and `false`.
+
+By encapsulating this toggle logic into a reusable hook, we can write cleaner and more concise code, enhancing the readability and maintainability of our React applications. Feel free to experiment with the `useToggle` hook in your projects to improve user experience and simplify state management.
+
+### Usage Cases
+
+-   **Toggle Element Visibility**: Control the visibility of elements like modals, dropdowns, sidebars, menus, navigation, or tooltips.
+-   **Manage Long Text Blocks**: Implement "Read More/Read Less" functionality for long blocks of text.
+-   **Manage Component State**: Control the state of sidebars, menus, or accordions.
+-   **Toggle Component Views**: Switch between different views or modes within a component.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useToggle = (initialState: boolean = false): [boolean, () => void] => {
+    const [state, setState] = useState(initialState);
+
+    // Define and memoize the toggle function using the `useCallback` hook,
+    // ensuring consistent behavior if we pass down the component.
+    // This function switches the boolean value to its opposite
+    const toggle = useCallback(() => {
+        setState((state) => !state);
+    }, []);
+
+    return [state, toggle];
+};
+
+export default useToggle;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const [state, toggle] = useToggle(initialState?)
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'initialState (optional)',
+                cells: [
+                    'boolean',
+                    'The boolean value you want the state to be initially. Defaults to `false`.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'state',
+                cells: [
+                    'boolean',
+                    'The boolean value representing the current state.',
+                ],
+            },
+            {
+                head: 'toggle',
+                cells: [
+                    '() => void ',
+                    'A function that toggles the `state` to its opposite based on the current value.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+ 
+### Managing Long Text Visibility
+
+This example showcases the implementation of a custom hook, `useToggle`, enabling users to expand or collapse text content dynamically. By allowing users to toggle between a short and long text version with the "Read More / Read Less" functionality, it significantly enhances readability and user experience.
+
+```tsx
+const longText = loadData(3).join(' ');
+
+// Slice the long text string to create a shorter version
+const shortTextVersion = `${longText.slice(0, 50)}...`;
+
+const Container: FC = () => {
+    // Destructuring the state and the toggle function from the `useToggle` hook
+    const [isExpanded, handleToggleExpansion] = useToggle();
+
+    return (
+        <Layer title="Container">
+            {/* Displaying either the full text or the short text based on the `isExpanded` state */}
+            <Text>{isExpanded ? longText : shortTextVersion}</Text>
+            <div className="flex w-full justify-center">
+                {/* Rendering a Button component with dynamic text based on the `isExpanded` state */}
+                <Button onClick={handleToggleExpansion}>
+                    {isExpanded ? 'Read Less' : 'Read More'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseLongTextBlock />
+</ExampleWrapper>
+
+### Managing Menu Visibility
+
+This example demonstrates how to manage menu visibility using a custom hook `useToggle`. By using the hook, the component toggles the `isOpen` state, which determines whether the menu is displayed or hidden. The menu is conditionally rendered based on the `isOpen` state, providing an interactive user interface. This approach allows for more reusable and cleaner state management for handling common toggle actions, such as opening and closing menus.
+
+```tsx
+const menuItems = loadData(3);
+
+const Container: FC = () => {
+    // Destructuring the state and toggle function from the custom hook
+    // to manage menu visibility state
+    const [isOpen, handleToggleMenu] = useToggle();
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggleMenu}>
+                    {isOpen ? 'Close Menu' : 'Open Menu'}
+                </Button>
+            </div>
+            {/* Conditional rendering based on the `isOpen` state  */}
+            {isOpen && (
+                <List
+                    items={menuItems}
+                    onClick={() => {}}
+                />
+            )}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseMenu />
+</ExampleWrapper>
+
+### Toggling Between Term Title and Description
+
+This example illustrates the use of a custom hook, `useToggle`, to manage the visibility state of a term card component. By toggling between displaying the term title and its description, users can interactively explore information, enhancing user experience and understanding within the application interface.
+
+```tsx
+const term = {
+    title: '"Closure"',
+    discription: `A closure is the combination of a function bundled together
+		(enclosed) with references to its surrounding state (the lexical environment).`,
+};
+
+const Container: FC = () => {
+    // Destructuring the state and toggle function from the custom hook
+    // to manage visibility state
+    const [isTitleView, handleToggleCard] = useToggle(true);
+
+    return (
+        <Layer title="Container">
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggleCard}>
+                    Show {isTitleView ? 'description' : 'term title'}
+                </Button>
+            </div>
+            <Text className="h-48">
+                {/* Conditional rendering of content based on the `isTitleView` state */}
+                {isTitleView ? term.title : term.discription}
+            </Text>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseTermCard />
+</ExampleWrapper>
+
+</ContentWrapper>

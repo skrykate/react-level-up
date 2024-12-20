@@ -1,0 +1,206 @@
+import { CaseHamburgerMenu } from './_features/case-hamburger-menu';
+import { CaseTermCard } from './_features/case-term-card';
+
+<ContentWrapper>
+## Explanation
+
+The `useHover` hook is a hook designed to simplify the process of tracking mouse hover interactions over specific DOM elements within a React component. By utilizing event listeners for `mouseenter` and `mouseleave` events, this hook allows developers to monitor whether the mouse cursor is currently hovering over a designated element. Upon detecting these events, the hook updates a boolean state to reflect the hover status, providing a straightforward way to incorporate hover functionality into React applications. Additionally, the hook handles the cleanup of event listeners to ensure proper resource management and prevent memory leaks, enhancing the overall robustness and efficiency of hover tracking within React components.
+
+Using this hook simplifies the creation of interactive user interfaces, such as tooltips, animations, or style changes based on mouse hover states. It's also worth noting that the hook provides a flexible and easily configurable way to track mouse hover, allowing developers to create interactive and intuitive web applications.
+
+### Usage Cases
+
+-   **Adding and Removing Classes**: Leveraging a hover-based approach to dynamically add or remove CSS classes, enabling the creation of different styles for elements during hover.
+-   **Changing Styles**: Adjusting element styles on hover, such as text color, background image, or font size, to enhance visual appeal and user interaction.
+-   **Tooltip Display**: Displaying tooltips when the mouse hovers over specific elements, providing additional context or information to users.
+-   **Interactive Menus**: Creating interactive menus or dropdowns that expand or show additional options when hovered over, improving navigation and user experience.
+-   **Image Galleries**: Enhancing image galleries by displaying image captions or controls when the mouse hovers over the image, providing users with more interaction options.
+-   **Interactive Cards**: Building interactive card components that change appearance or display additional content when hovered over, improving user engagement and interaction with content.
+-   **Hover Effects**: Implementing hover effects such as animations, transitions, or color changes to enhance the visual feedback when interacting with elements on the page.
+-   **Altering Behavior**: Adjusting element behavior on hover, such as showing or hiding additional interface elements, triggering animations, or invoking other actions upon interaction with elements.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const useHover = (ref: RefObject<HTMLElement>): boolean => {
+    // Define a state variable to track whether the element is being hovered
+    const [isHovering, setHovering] = useState(false);
+
+    // Set up an effect to attach event listeners for `mouseenter` and
+    // `mouseleave` events when the component mounts or when the `ref` changes
+    useEffect(() => {
+        // Check if the `ref` is pointing to a valid DOM element
+        if (!ref.current) {
+            return;
+        }
+
+        // Retrieve the DOM node from the `ref` for convenience
+        const node = ref.current;
+
+        // Define event handler functions to set the `isHovering` state accordingly.
+        // By defining them within the effect, we avoid the need to include them in the dependency array
+        const onEnter = () => setHovering(true);
+        const onLeave = () => setHovering(false);
+
+        // Attach event listeners for `mouseenter` and `mouseleave` events to the DOM node.
+        // You can replace `mouseenter` and `mouseleave` with `pointerenter` and `pointerleave`.
+        // Unlike `mouseenter`, the `pointerenter` event bubbles, meaning it can be captured
+        // on a parent element when the mouse pointer enters its child elements.
+        // `pointerenter` also supports a wider range of input devices,
+        // such as styluses and touch screens, providing better compatibility and versatility
+        node.addEventListener('mouseenter', onEnter);
+        node.addEventListener('mouseleave', onLeave);
+
+        // Return a cleanup function to remove event listeners
+        // when the component unmounts or when the `ref` changes
+        return () => {
+            node.removeEventListener('mouseenter', onEnter);
+            node.removeEventListener('mouseleave', onLeave);
+        };
+    }, [ref]); // Include the `ref` in the dependency array to ensure the `useEffect` runs when the `ref` changes
+
+    return isHovering;
+};
+
+export default useHover;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const isHovering = useHover(ref);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'ref',
+                cells: [
+                    'RefObject<HTMLElement>',
+                    'Represents a reference to the DOM element for which the mouse hover state is being tracked.',
+                ],
+            },
+        ],
+    }}
+/>
+
+### Return values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'isHovering',
+                cells: [
+                    'boolean',
+                    'The indication of whether the element is currently being hovered over.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Interactive Hover Menu
+
+This example showcases an interactive hover menu utilizing a custom `useHover` hook. Alongside toggling between a hamburger and close icon upon hover, the menu itself dynamically appears when hovered over. Leveraging the `useHover` hook optimizes event handling for seamless user interaction, enhancing the overall functionality of the React component.
+
+```tsx
+const menuItems = loadData(3);
+
+const Container: FC = () => {
+    // Creating a reference to be attached to the DOM element
+    const elementRef = useRef<HTMLDivElement | null>(null);
+
+    // Utilize the custom hook `useHover` to determine if the element is being hovered
+    const isHovered = useHover(elementRef);
+
+    const handleClick = () => {};
+
+    return (
+        <Layer title="Container">
+            <div className="flex items-center justify-center">
+                <div
+                    // Assigning the `ref` to the `div` element,
+                    // allowing it to be tracked by the `useHover` hook
+                    ref={elementRef}
+                    className="relative"
+                >
+                    <div className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500 text-white">
+                        {isHovered ? <IconClose /> : <IconOpen />}
+                    </div>
+                    {/* Conditionally render menu based on `isHovered` state */}
+                    {isHovered && (
+                        <div className="absolute -top-2 left-14 w-40 p-2">
+                            <List
+                                items={menuItems}
+                                onClick={handleClick}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseHamburgerMenu />
+</ExampleWrapper>
+
+### Interactive Term Card
+
+This example illustrates an interactive term card utilizing a custom `useHover` hook. The card conditionally displays term discription upon hover. Leveraging the `useHover` hook enhances user interaction by efficiently managing `isCardHovered` state within the React component.
+
+```tsx
+const term = {
+    title: '"Closure"',
+    discription: `A closure is the combination of a function bundled together 
+		(enclosed) with references to its surrounding state (the lexical environment).`,
+};
+
+const Container: FC = () => {
+    // Create a reference to a DOM element
+    const elementRef = useRef<HTMLDivElement | null>(null);
+
+    // Utilize the custom hook `useHover` to determine if the element is being hovered
+    const isCardHovered = useHover(elementRef);
+
+    return (
+        <Layer title="Container">
+            <Text
+                ref={elementRef}
+                className="h-48"
+            >
+                {
+                    // Conditional rendering of content based on `isCardHovered` state
+                    isCardHovered ? term.discription : term.title
+                }
+            </Text>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper>
+    <CaseTermCard />
+</ExampleWrapper>
+
+</ContentWrapper>

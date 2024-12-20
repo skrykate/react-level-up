@@ -1,0 +1,536 @@
+import { CaseChildProp } from './_features/case-child-prop';
+import { CaseNoChildProp } from './_features/case-no-child-prop';
+
+<ContentWrapper>
+
+## Dynamic Approach
+
+Hardcoded markup can lead to inconvenience and code complexity, especially when it's necessary to display multiple identical components in a row. In such cases, it's more reasonable to avoid this approach, which we will call "static". For example, a dynamic approach is more suitable for such UI elements as navigation menus, filters, and lists. It involves creating an array with data and then iterating over it using the `map` method to generate a complete list of components.
+
+### Example
+
+Let's consider both approaches with an example of displaying a list of sorting options. They both accomplish the same task but differ in how they create and manage the data.
+
+#### Static Approach
+
+```tsx
+interface SortSelectionProps {
+    onSelectOption: (value: string) => void;
+}
+
+const SortSelection: FC<SortSelectionProps> = ({ onSelectOption }) => {
+    return (
+        <>
+            <h3>Sort By</h3>
+            <ul>
+                <li>
+                    <button onClick={() => onSelectOption('byRate')}>
+                        ⭐️ Best Rated
+                    </button>
+                </li>
+                <li>
+                    <button onClick={() => onSelectOption('byLowestPrice')}>
+                        💰 Lowest Price
+                    </button>
+                </li>
+                <li>
+                    <button onClick={() => onSelectOption('byHighestPrice')}>
+                        💎 Highest Price
+                    </button>
+                </li>
+            </ul>
+        </>
+    );
+};
+```
+
+In this approach, the sorting options are directly embedded in the `SortSelection` component code. Each list item has a hardcoded text and value passed to the `onSelectOption` function upon clicking. Despite its simplicity, there are several drawbacks.
+
+**Disadvantages**
+
+-   **Maintenance difficulty:** If you need to change or add another item, you will have to modify multiple places in the code.
+-   **High risk of errors:** Due to code duplication, bugs can easily be introduced.
+-   **Increased code volume:** Adding new items makes the code bulkier and less readable.
+
+#### Dynamic Approach
+
+```tsx
+const sortOptions = [
+    {
+        id: 1,
+        name: '⭐️ Best Rated',
+        value: 'byRate',
+    },
+    {
+        id: 2,
+        name: '💰 Lowest Price',
+        value: 'byLowestPrice',
+    },
+    {
+        id: 3,
+        name: '💎 Highest Price',
+        value: 'byHighestPrice',
+    },
+];
+
+interface SortSelectionProps {
+    onSelectOption: (value: string) => void;
+}
+
+const SortSelection: FC<SortSelectionProps> = ({ onSelectOption }) => {
+    return (
+        <>
+            <h3>Sort By</h3>
+            <ul>
+                {sortOptions.map((option) => (
+                    <li key={option.id}>
+                        <button onClick={() => onSelectOption(option.value)}>
+                            {option.name}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </>
+    );
+};
+```
+
+Here, the sorting data is moved outside the component into a separate array called `sortOptions`. This allows changes or extensions without needing to edit the `SortSelection` component code. The component dynamically creates a list of elements using the `map` method to iterate over the `sortOptions` array. Each array element is assigned the corresponding text and value. This approach centralizes data management in one place — array.
+
+**Advantages**
+
+-   **Easier maintenance:** The code becomes more flexible and manageable, allowing easy data handling in one place if the component content needs to be changed.
+-   **Fewer bugs:** The absence of code duplication reduces the likelihood of errors.
+-   **Improved code readability:** Using a data array and a loop makes the code more compact and understandable.
+
+The dynamic approach to component creation in React is more efficient and preferable, significantly simplifying the development process. By using a data array and the `map` method, the code becomes more structured and easily readable, which is especially important when working with large and complex interfaces.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Lists
+
+Iterating over list elements is a common task, usually solved using the `map` method. However, in components with a lot of markup, using this method can reduce code readability due to additional indents and syntax. In such cases, it's better to extract the iteration logic into separate component, even if the markup is relatively small. This simplifies the parent component, which now only needs to "know" that a list is being rendered in a specific place.
+
+It's better to leave the iteration of list elements in a component designed exclusively for displaying the list. If the list markup is complex and lengthy, it should also be moved to a separate component.
+
+### Example
+
+Consider an example where the loop is combined with other markup in one component, leading to confusing and hard-to-understand code.
+
+```tsx
+const NewsPage: FC = () => {
+    return (
+        <div>
+            <Header />
+            <h1>News:</h1>
+            <div>
+                {newsList.map((news) => (
+                    <div key={news.id}>
+                        <h2>{news.title}</h2>
+                        <p>{news.content}</p>
+                    </div>
+                ))}
+            </div>
+            <div>
+                <h3>Some additional content</h3>
+                <p>
+                    Duis vehicula eros eget metus rhoncus, vitae rutrum ex
+                    tincidunt.
+                </p>
+            </div>
+        </div>
+    );
+};
+```
+
+In this `NewsPage` component code, the iteration over the `newsList` elements is done directly within the main component. Among other things, there are other components present. This not only complicates the markup but also makes the component less readable. In such cases, it's better to extract the list into a separate component.
+
+Let's move on to a reworked example that demonstrates how to improve readability and code structure by breaking it into more specialized components:
+
+```tsx
+interface NewsListProps {
+    newsList: INewsItems;
+}
+
+const NewsList: FC<NewsListProps> = ({ newsList }) => {
+    return (
+        <>
+            <h1>News:</h1>
+            <div>
+                {newsList.map((news) => (
+                    <div key={news.id}>
+                        <h2>{news.title}</h2>
+                        <p>{news.content}</p>
+                    </div>
+                ))}
+            </div>
+        </>
+    );
+};
+
+const NewsPage: FC = () => {
+    return (
+        <div>
+            <Header />
+            <NewsList newsList={newsList} />
+            <div>
+                <h3>Some additional content</h3>
+                <p>
+                    Duis vehicula eros eget metus rhoncus, vitae rutrum ex
+                    tincidunt.
+                </p>
+            </div>
+        </div>
+    );
+};
+```
+
+Here, we created a separate `NewsList` component that accepts the `newsList` array as a prop. It uses the `map` method to iterate over the list items and render them. This method stays within the context of the component whose sole task is to display the news list, adhering to the **Single Responsibility Principle**. Now, the main `NewsPage` component only contains the high-level page structure. Its additional content remains unchanged, while the news display logic is delegated to the `NewsList` component. This allows for easy modification and scaling of the code in the future. Extracting the list display logic into a separate component significantly improves code readability and maintainability. One can go further and create a separate `News` component to return in the `map` method instead of bulky markup.
+
+Dividing the code into smaller components with clearly defined tasks improves code structure and readability, making it easier to maintain and test. Using separate components for iterating and displaying list elements allows focusing on the logic of each component individually, without overloading the main component with unnecessary details. Implementing the **Single Responsibility Principle** simplifies the main component, making it easier to understand and modify. This is especially important when working on large and complex projects where code maintainability and scalability are key. Following these recommendations can lead to more efficient and clean code that will be easier to maintain and extend in the future.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Using the Children Prop
+
+Using the `children` prop is a useful practice for passing nested components. This approach is particularly useful when it's necessary to avoid unnecessary re-renders of nested components caused by updates to the parent component. However, it's only applicable if the nested component doesn't directly depend on the state or props of the parent but receives the necessary data through the parent's props.
+
+The essence of this approach is that React optimizes the rendering process by knowing that if a component contains children that remain unchanged, there is no need to re-render them every time the parent component updates. This contributes to stability and predictability of application behavior, as well as improving performance.
+
+### Example
+
+Without using the `children` prop:
+
+```tsx
+interface GrandChildComponentProps {
+    data: string;
+}
+
+const GrandChildComponent: FC<GrandChildComponentProps> = ({ data }) => {
+    console.log('GrandChildComponent --- Render');
+
+    return (
+        <Layer
+            title="GrandChild"
+            colored
+        >
+            <Text>Hello, {data}!</Text>
+        </Layer>
+    );
+};
+
+interface ChildComponentProps {
+    data: string;
+}
+
+const textContent = 'Some additional content 😻';
+
+const ChildComponent: FC<ChildComponentProps> = ({ data }) => {
+    console.log('ChildComponent --- Render');
+
+    const [isOpen, setIsopen] = useState(false);
+
+    const handleToggle = () => {
+        setIsopen((prev) => !prev);
+    };
+
+    return (
+        <Layer
+            title="Child"
+            colored
+        >
+            <GrandChildComponent data={data} />
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggle}>
+                    {isOpen ? 'Hide' : 'Show'}
+                </Button>
+            </div>
+            {isOpen && <Text>{textContent}</Text>}
+        </Layer>
+    );
+};
+
+const initialData = 'null';
+
+const dataToSet = 'John Doe';
+
+const ParentComponent: FC = () => {
+    console.log('ParentComponent --- Render');
+
+    const [data, setData] = useState(initialData);
+
+    const isDataSet = data !== initialData;
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent data={data} />
+            <div className="flex w-full justify-center">
+                <Button
+                    disabled={isDataSet}
+                    onClick={handleSetData}
+                >
+                    {isDataSet ? 'Data Set' : 'Set Data'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+In this example, `GrandChildComponent` doesn't directly depend on its parent component (`ChildComponent`) but merely receives the `data` prop through it. Clicking the "Hide / Show" button changes the `isOpen` state, leading to re-rendering of `ChildComponent` and consequently `GrandChildComponent` as well. Thus, even though nothing changed for `GrandChildComponent`, it will still be re-rendered. If `GrandChildComponent` were a heavyweight component, unnecessary re-renders could negatively impact performance. To confirm this, log messages in the console about re-renders of `ChildComponent` and `GrandChildComponent` will appear after clicking the "Hide / Show" button.
+
+<ExampleWrapper isResetAllowed>
+    <CaseNoChildProp />
+</ExampleWrapper>
+
+Using the `children` prop:
+
+```tsx
+interface GrandChildComponentProps {
+    data: string;
+}
+
+const GrandChildComponent: FC<GrandChildComponentProps> = ({ data }) => {
+    console.log('GrandChildComponent --- Render');
+
+    return (
+        <Layer
+            title="GrandChild"
+            colored
+        >
+            <Text>Hello, {data}!</Text>
+        </Layer>
+    );
+};
+
+interface ChildComponentProps {
+    children: ReactNode;
+}
+
+const textContent = 'Some additional content 😸';
+
+const ChildComponent: FC<ChildComponentProps> = ({ children }) => {
+    console.log('ChildComponent --- Render');
+
+    const [isOpen, setIsopen] = useState(false);
+
+    const handleToggle = () => {
+        setIsopen((prev) => !prev);
+    };
+
+    return (
+        <Layer
+            title="Child"
+            colored
+        >
+            {children}
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggle}>
+                    {isOpen ? 'Hide' : 'Show'}
+                </Button>
+            </div>
+            {isOpen && <Text>{textContent}</Text>}
+        </Layer>
+    );
+};
+
+const initialData = 'null';
+
+const dataToSet = 'John Doe';
+
+const ParentComponent: FC = () => {
+    console.log('ParentComponent --- Render');
+
+    const [data, setData] = useState(initialData);
+
+    const isDataSet = data !== initialData;
+
+    const handleSetData = () => {
+        setData(dataToSet);
+    };
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <ChildComponent>
+                <GrandChildComponent data={data} />
+            </ChildComponent>
+            <div className="flex w-full justify-center">
+                <Button
+                    disabled={isDataSet}
+                    onClick={handleSetData}
+                >
+                    {isDataSet ? 'Data Set' : 'Set Data'}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+In this variant, thanks to the `children` prop, the behavior is different. Clicking the "Hide / Show" button only triggers a re-render of `ChildComponent`, while `GrandChildComponent` remains untouched. This is because there were no changes to the variables that `GrandChildComponent` depends on (`data` prop ). The console will log a message only about the re-rendering of `ChildComponent`. However, if you click the "Set Data" button, the console will log a message about the re-rendering of `GrandChildComponent`, as the `data` prop passed to this component will change.
+
+<ExampleWrapper isResetAllowed>
+    <CaseChildProp />
+</ExampleWrapper>
+
+This approach allows creating more maintainable and efficient components, improving the overall application architecture and optimizing performance.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Conditional Rendering
+
+When developing with React, conditional rendering of components is often necessary. One popular way is using the logical `&&` operator. This approach allows for reducing the amount of code and is convenient for quick rendering. However, in some cases, this method can lead to unexpected results. For example, if a variable value equals `0`, this value will also be displayed in the UI, which is usually undesirable. To avoid such situations, it's recommended to use the ternary operator. Although it's more verbose, it ensures correct display even when the value is `0`. Moreover, the ternary operator facilitates adding alternative rendering options if needed.
+
+### Example
+
+Consider an example using the `&&` operator for conditional rendering of a message about unread messages:
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {totalMessages && (
+                <span>You have {totalMessages} unread messages</span>
+            )}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+In this example, if the `totalMessages` variable equals `0`, the value `0` will be displayed in the UI, which is undesirable. This happens due to type coercion in JavaScript, where the value `0` is considered `false`. The `&&` operator returns a `false` value if one of the operands is `false`. In this case, when `totalMessages` equals `0`, the condition is `false`, and React doesn't render the second argument (the message); instead, it displays the value of `totalMessages`, which is a number.
+
+Now, consider a more elegant solution to prevent displaying `0` in the UI using the ternary operator:
+
+```tsx
+const totalMessages = 0;
+
+const MessageNotifier: FC = () => {
+    return (
+        <div>
+            <h3>MessageNotifier</h3>
+            {totalMessages ? (
+                <span>You have {totalMessages} unread messages</span>
+            ) : null}
+            <p>Some content</p>
+        </div>
+    );
+};
+```
+
+Here, in the absence of unread messages (i.e., when `totalMessages` equals `0`), `null` is returned. Thus, no additional elements will be displayed in the UI, avoiding the unwanted display of `0`. This method makes the code more compact and readable, as the condition and rendering result are in one place. This solution improves the understanding of logic and simplifies code maintenance.
+
+When developing React components, avoid using short-circuit evaluation with the logical `&&` operator for conditional rendering. Instead, use the ternary operator. Although it requires slightly more code, it ensures more correct and predictable behavior in the UI, simplifying the addition of alternative rendering options. This is especially important when developing reliable and user-friendly interfaces.
+
+This is one way to solve such a problem. For more information on other methods, check out the <PostLink id="incorrect-usage-of-logical-operators">separate article</PostLink>.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Ternary Operators
+
+Ternary operators represent a concise form of writing conditional expressions in JavaScript, which can be useful for making simple decisions based on conditions. In React, they're also used for conditional rendering. However, their use at multiple levels of nesting can significantly impair code readability and complicate its maintenance in the future. Despite their compactness, in such cases, it's preferable to explicitly separate the logic into more understandable components. Extracting nested logic into separate components helps reduce the use of ternary operators to a single level.
+
+### Example
+
+Let's take a look at the following code example demonstrating the use of nested ternary operators to determine which greeting message to display based on the user's login status and administrative rights.
+
+```tsx
+interface HomePageProps {
+    isLoggedIn: boolean;
+    isAdmin: boolean;
+}
+
+const HomePage: FC<HomePageProps> = ({ isLoggedIn, isAdmin }) => {
+    return (
+        <div>
+            <Header />
+            {isLoggedIn ? (
+                isAdmin ? (
+                    <span>Welcome, administrator!</span>
+                ) : (
+                    <span>Welcome, user!</span>
+                )
+            ) : (
+                <span>Please log in.</span>
+            )}
+            <div>
+                <h3>Some additional content</h3>
+                <p>
+                    Duis vehicula eros eget metus rhoncus, vitae rutrum ex
+                    tincidunt.
+                </p>
+            </div>
+        </div>
+    );
+};
+```
+
+Even in this simplified example, it's already difficult to immediately understand what logic is implemented in the markup. Maintaining it would be even more challenging if the logic were more complex. For instance, instead of simple paragraphs, more complex constructions consisting of multiple elements could be used. This would create a fertile ground for bugs. In such a scenario, making changes in the future would be extremely difficult.
+
+Now, let's consider an improved solution with the logic extracted into a separate component, which will help reduce nesting.
+
+```tsx
+interface WelcomeMessageProps {
+    isAdmin: boolean;
+}
+
+const WelcomeMessage: FC<WelcomeMessageProps> = ({ isAdmin }) => {
+    const person = isAdmin ? 'administrator' : 'user';
+
+    return <span>Welcome, {person}!</span>;
+};
+
+interface HomePageProps {
+    isLoggedIn: boolean;
+    isAdmin: boolean;
+}
+
+const HomePage: FC<HomePageProps> = ({ isLoggedIn, isAdmin }) => {
+    return (
+        <div>
+            <Header />
+            {isLoggedIn ? (
+                <WelcomeMessage isAdmin={isAdmin} />
+            ) : (
+                <span>Please log in.</span>
+            )}
+            <div>
+                <h3>Some additional content</h3>
+                <p>
+                    Duis vehicula eros eget metus rhoncus, vitae rutrum ex
+                    tincidunt.
+                </p>
+            </div>
+        </div>
+    );
+};
+```
+
+In this case, we created a separate `WelcomeMessage` component that displays the appropriate greeting message depending on the administrator status. The component creates a variable during the render, which is then inserted into the JSX. Now, the main `HomePage` component uses just one ternary operator to check the login status. If the user is logged in, the `WelcomeMessage` component is called with the `isAdmin` prop; otherwise, a message about needing to log in is displayed.
+
+This approach improves the structure of `HomePage`, makes the code more readable, and simplifies its maintenance in the long term, especially when further expanding the logic or changing requirements, which is crucial for efficient development.
+
+Introducing such components not only enhances code readability but also simplifies its testing and evolution. Breaking down logic into more understandable components increases development efficiency and reduces the likelihood of errors.
+
+Thus, avoiding nested ternary operators by extracting logic into separate components contributes to creating cleaner, more understandable, and maintainable code in web development.
+
+</ContentWrapper>

@@ -1,0 +1,355 @@
+import { CaseUseCallback } from './_features/case-use-callback';
+import { CaseUseMemo } from './_features/case-use-memo';
+
+<ContentWrapper>
+Rendering is one of the key aspects to consider when writing robust React components. Re-rendering can occur frequently, for example, due to changes in props, the component's own state, or the state within a custom hook used in the component. It's important to remember that with each re-render, the rendering function is executed again, meaning any work done inside it will be repeated. This is absolutely logical, as it's necessary for correctly displaying the component with updated data.
+
+In the context of rendering, React components interact with two types of data: data that triggers a re-render when it changes (e.g., state, props), and data derived during rendering based on props and state. If the computation of this derived data is resource-intensive and depends solely on a specific prop, re-renders caused by changes in the component's state (which don't affect the computation) can lead to redundant calculations, negatively impacting the application's performance.
+
+To avoid redundant work, React provides `useMemo` and `useCallback` hooks, which, when used correctly, can significantly improve component performance. Let's explore their usage with detailed examples.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## useMemo <span id="use-memo-usage" />
+
+The `useMemo` hook enables you to memoize the results of computations that depend on specific input data. If the input data remains unchanged, `useMemo` returns the previously memoized value instead of recomputing it, making it particularly useful for optimizing resource-intensive calculations.
+
+In the example below, we memoize the reactive variable `computedValue`, which is calculated based on the `value` prop. Since this computation is expensive (simulated with a one-second delay using the `emulateSlowCode` function), the `computedValue` variable is recalculated only when `value` changes. If `value` remains the same, React returns the previously memoized result. This optimization prevents unnecessary recalculations when `ExpensiveComponent` re-renders due to changes in its own `isOpen` state (which doesn't affect `computedValue`).
+
+```tsx
+interface ExpensiveComponentProps {
+    value: number;
+}
+
+const ExpensiveComponent: FC<ExpensiveComponentProps> = ({ value }) => {
+    console.log('Render of `ExpensiveComponent`');
+
+    const [isOpen, setIsopen] = useState(false);
+
+    const computedValue = useMemo(() => {
+        console.log('`computedValue` is computing');
+
+        emulateSlowCode(1000);
+
+        return value * 2;
+    }, [value]);
+
+    const handleToggle = () => {
+        setIsopen((prev) => !prev);
+    };
+
+    return (
+        <Layer
+            title="Expensive"
+            colored
+        >
+            <Text>Computed value: {computedValue}</Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggle}>
+                    {isOpen ? 'Close' : 'Open'}
+                </Button>
+            </div>
+            {isOpen && <ChildComponent />}
+        </Layer>
+    );
+};
+
+const initialValue = 23;
+
+const increment = 3;
+
+const ParentComponent: FC = () => {
+    const [value, setValue] = useState(initialValue);
+
+    const handleChangeIncrement = () => {
+        setValue((prev) => prev + increment);
+    };
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <Text>Value: {value}</Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleChangeIncrement}>+ {increment}</Button>
+            </div>
+            {value !== initialValue && <ExpensiveComponent value={value} />}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUseMemo useMemoVersion />
+</ExampleWrapper>
+
+When you click the "Open / Close" button (which changes the `isOpen` state, causing `ExpensiveComponent` to re-render), the `ChildComponent` renders instantly, even though `computedValue` involves an expensive calculation. This happens because `useMemo` returns the previously memoized result, bypassing the computation since the `value` prop hasn't changed. As a result, when the `isOpen` state changes, you'll see the "Render of `ExpensiveComponent`" log in the console, but not "`computedValue` is computing" (logged only when `computedValue` is recalculated).
+
+However, if you click the "3" button, the updated `computedValue` will appear with a delay, and the console will display the log "`computedValue` is computing". This makes sense since `value` prop changed, triggering the recalculation of `computedValue` because it depends on it.
+
+If additional props besides `value` were present and changed, `computedValue` would remain unaffected unless `value` itself changed. An example of this case can be found in the React <A href="https://react.dev/reference/react/useMemo#examples-recalculation">documentation</A>.
+
+Now let's consider an example **without** using the `useMemo` hook:
+
+```tsx
+interface ExpensiveComponentProps {
+    value: number;
+}
+
+const ExpensiveComponent: FC<ExpensiveComponentProps> = ({ value }) => {
+    console.log('Render of `ExpensiveComponent`');
+
+    const [isOpen, setIsopen] = useState(false);
+
+    const computeValue = () => {
+        console.log('`computedValue` is computing');
+
+        emulateSlowCode(1000);
+
+        return value * 2;
+    };
+
+    const computedValue = computeValue();
+
+    const handleToggle = () => {
+        setIsopen((prev) => !prev);
+    };
+
+    return (
+        <Layer
+            title="Expensive"
+            colored
+        >
+            <Text>Computed value: {computedValue}</Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleToggle}>
+                    {isOpen ? 'Close' : 'Open'}
+                </Button>
+            </div>
+            {isOpen && <ChildComponent />}
+        </Layer>
+    );
+};
+
+const initialValue = 23;
+
+const increment = 3;
+
+const ParentComponent: FC = () => {
+    const [value, setValue] = useState(initialValue);
+
+    const handleChangeIncrement = () => {
+        setValue((prev) => prev + increment);
+    };
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <Text>Value: {value}</Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleChangeIncrement}>+ {increment}</Button>
+            </div>
+            {value !== initialValue && <ExpensiveComponent value={value} />}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUseMemo useMemoVersion={false} />
+</ExampleWrapper>
+
+Without the `useMemo` hook, the expensive `computedValue` will be recalculated every time the `isOpen` state changes, causing `ExpensiveComponent` to re-render, even if the `value` prop remains the same. This recalculation delays the rendering of `ChildComponent`, and as a result both logs will appear in the console.
+
+The `useMemo` hook allows avoiding this by memoizing the calculation results and reusing them if the input data hasn't changed.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## useCallback <span id="use-callback-usage"/>
+
+The `useCallback` hook is similar to `useMemo` hook but is used for memoizing functions. It's especially useful when passing functions as props from parent components to children, which are wrapped in `memo`, to prevent their re-rendering if the props haven't changed. It's important to remember that variables storing data by reference, which are declared inside the component, are recreated with a new reference every time the component re-renders. Therefore, props that are functions or objects are considered different if not memoized. This can lead to unnecessary re-rendering of the child components, even if the functions themselves remain the same.
+
+The `useCallback` hook prevents a function passed as a prop to a child component from being recreated on each re-render of the parent component. This, in turn, prevents unnecessary re-renders of that child component, but only if it's wrapped in `memo`. This is logical because if the props haven't changed (i.e., their references remain the same), the component returns the same result. Of course, this is only true if your component is a "Pure Functional Component," meaning it produces the same output for the same inputs.
+
+Let's take a look at an example. The `ParentComponent` creates a handler for increasing its state variable `value` — `handleIncrementByIncrement`, and wraps it in `useCallback` hook. The reactive variable `increment` must be specified in the dependency array because it's used inside the memoized function. Thus, `handleIncrementByIncrement` will only be recreated when `increment` changes, not on every `ParentComponent` render. This handler is then passed to the `onClick` prop of the child component, which is the `ExpensiveComponent` wrapped in `memo` — now referred to as `MemoizedExpensiveComponent`. Its re-render is considered an expensive operation (we use the familiar function `emulateSlowCode` from the previous example).
+
+```tsx
+interface ExpensiveComponentProps {
+    onClick: () => void;
+    increment: number;
+}
+
+const ExpensiveComponent: FC<ExpensiveComponentProps> = ({
+    onClick: handleClick,
+    increment,
+}) => {
+    console.log('Render of `ExpensiveComponent`');
+
+    emulateSlowCode(500);
+
+    return (
+        <Layer
+            title="Expensive"
+            colored
+        >
+            <div className="flex w-full justify-center">
+                <Button onClick={handleClick}>
+                    Increment value by {increment}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+
+const MemoizedExpensiveComponent = memo(ExpensiveComponent);
+
+const initialValue = 23;
+
+const initialIncrement = 1;
+
+const ParentComponent: FC = () => {
+    const [value, setValue] = useState(initialValue);
+
+    const [increment, setIncrement] = useState(initialIncrement);
+
+    const handleChangeIncrement = (value: number) => {
+        setIncrement(value);
+    };
+
+    const handleIncrementByIncrement = useCallback(() => {
+        setValue((prev) => prev + increment);
+    }, [increment]);
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <div className="flex flex-col gap-2">
+                <Label>Increment</Label>
+                <Counter
+                    min={1}
+                    max={9}
+                    value={increment}
+                    onChange={handleChangeIncrement}
+                />
+            </div>
+            <Text>Value: {value}</Text>
+            {(value !== initialValue || increment !== initialIncrement) && (
+                <MemoizedExpensiveComponent
+                    onClick={handleIncrementByIncrement}
+                    increment={increment}
+                />
+            )}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUseCallback useCallbackVersion />
+</ExampleWrapper>
+
+Now let's test the performance of this "memo-useCallback" duo. When you click the "Increment value by `increment`" button, the `value` state variable in the `ParentComponent` changes, triggering a re-render of the `ParentComponent` as well as all its child components.
+
+However, thanks to the `useCallback` hook, which returns the same function reference when the `increment` value hasn't changed, and the `memo` higher-order component, which prevents unnecessary re-renders by memoizing the `ExpensiveComponent`, as the `onClick` prop reference hasn't changed, the re-render of the `MemoizedExpensiveComponent` child component is avoided. And as a result, the state changes are reflected immediately without the delay caused by `emulateSlowCode`. This is because the `MemoizedExpensiveComponent` is not re-rendered, thanks to the memoization of the component, which only re-renders when the `onClick` prop (its reference) or other props change.
+
+You can verify this by checking the console, where the log "Render of `ExpensiveComponent`" won't appear every time you click the "Increment value by `increment`" button, demonstrating the performance optimization in action.
+
+Now, if you change the value of the `increment` state variable, you'll notice a delay in rendering. This happens because `MemoizedExpensiveComponent` is re-rendered (i.e., `emulateSlowCode` is called), as its `onClick` and `increment` props have changed. Since `increment` is included in the dependency array of the `useCallback` hook, the `handleIncrementByIncrement` function is recreated whenever `increment` changes. This updated function reference is then passed as the `onClick` prop to `MemoizedExpensiveComponent`, triggering its re-rendering.
+
+And now let's take a look at an example **without** using the `useCallback` hook:
+
+```tsx
+interface ExpensiveComponentProps {
+    onClick: () => void;
+    increment: number;
+}
+
+const ExpensiveComponent: FC<ExpensiveComponentProps> = ({
+    onClick: handleClick,
+    increment,
+}) => {
+    console.log('Render of `ExpensiveComponent`');
+
+    emulateSlowCode(500);
+
+    return (
+        <Layer
+            title="Expensive"
+            colored
+        >
+            <div className="flex w-full justify-center">
+                <Button onClick={handleClick}>
+                    Increment value by {increment}
+                </Button>
+            </div>
+        </Layer>
+    );
+};
+
+const MemoizedExpensiveComponent = memo(ExpensiveComponent);
+
+const initialValue = 23;
+
+const initialIncrement = 1;
+
+const ParentComponent: FC = () => {
+    const [value, setValue] = useState(initialValue);
+
+    const [increment, setIncrement] = useState(initialIncrement);
+
+    const handleChangeIncrement = (value: number) => {
+        setIncrement(value);
+    };
+
+    const handleIncrementByIncrement = () => {
+        setValue((prev) => prev + increment);
+    };
+
+    return (
+        <Layer
+            title="Parent"
+            colored
+        >
+            <div className="flex flex-col gap-2">
+                <Label>Increment</Label>
+                <Counter
+                    min={1}
+                    max={9}
+                    value={increment}
+                    onChange={handleChangeIncrement}
+                />
+            </div>
+            <Text>Value: {value}</Text>
+            {(value !== initialValue || increment !== initialIncrement) && (
+                <MemoizedExpensiveComponent
+                    onClick={handleIncrementByIncrement}
+                    increment={increment}
+                />
+            )}
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseUseCallback useCallbackVersion={false} />
+</ExampleWrapper>
+
+Now, when you click the "Increment value by `increment`" button, you will notice that the `value` state variable being updated with a delay because `MemoizedExpensiveComponent` re-renders every time `ParentComponent` re-renders. This happens despite the fact that the content of the `handleIncrementByIncrement` function hasn't changed after the `value` state variable was modified.
+
+However, the reference to the function has changed because it was recreated during the re-render of `ParentComponent`. Therefore, for `memo`, the `onClick` prop is considered different (distinct from the previous one), causing `MemoizedExpensiveComponent` to re-render. Consequently, you will see the log "Render of `ExpensiveComponent`" in the console every time the button is clicked.
+
+</ContentWrapper>
+
+<ContentWrapper>
+Using the `useMemo` and `useCallback` hooks helps avoid redundant work during rendering, thereby improving the performance of React applications. However, it's important to remember that incorrect use of these hooks can lead to unexpected results and make debugging difficult. Always carefully check the values specified in the dependency array to ensure that memoization works correctly and efficiently.
+
+</ContentWrapper>

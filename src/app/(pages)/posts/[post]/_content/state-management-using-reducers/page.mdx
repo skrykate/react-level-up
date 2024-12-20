@@ -1,0 +1,245 @@
+<ContentWrapper>
+Sometimes we need a more powerful way to define and manage state than the `useState` hook. Try using the `useReducer` hook before turning to third-party libraries. It's a great tool for managing complex state without requiring additional dependencies. In combination with `context` and TypeScript, the `useReducer` hook can be very powerful. Unfortunately, it's not used very often because people tend to prefer specialized libraries. That said, when managing multiple pieces of state, moving them into a reducer can bring structure and clarity to your code. Let's consider this with an example.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Approach using useState
+
+The code below demonstrates how to manage the state of notes using `useState` hook. In this example, we create a note-taking application that allows you to add, archive, and delete notes.
+
+```tsx
+let nextId = 3;
+
+interface INote {
+    id: number;
+    text: string;
+    archived: boolean;
+}
+
+const initialNotes: INote[] = [
+    {
+        id: 0,
+        text: 'Project name idea: "Blue Sky"',
+        archived: false,
+    },
+    {
+        id: 1,
+        text: 'Book recommendation: "Gam" by Erich Maria Remarque',
+        archived: false,
+    },
+    {
+        id: 2,
+        text: 'Style idea: Green scarf with blue pants',
+        archived: false,
+    },
+];
+
+const NotesApp: FC = () => {
+    const [notes, setNotes] = useState(initialNotes);
+
+    const [inputValue, setInputValue] = useState('');
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value);
+    };
+
+    const handleAddNote = () => {
+        if (inputValue.trim() !== '') {
+            const newNote: INote = {
+                id: nextId++,
+                text: inputValue,
+                archived: false,
+            };
+
+            setNotes([...notes, newNote]);
+
+            setInputValue('');
+        }
+    };
+
+    const handleArchiveNote = (noteId: number) => {
+        const updatedNotes = notes.map((note) =>
+            note.id === noteId ? { ...note, archived: true } : note
+        );
+
+        setNotes(updatedNotes);
+    };
+
+    const handleDeleteNote = (noteId: number) => {
+        const filteredNotes = notes.filter((note) => note.id !== noteId);
+
+        setNotes(filteredNotes);
+    };
+
+    return (
+        <div>
+            <label>
+                New note
+                <input
+                    type="text"
+                    name="note"
+                    value={inputValue}
+                    onChange={handleChange}
+                    placeholder="Enter your note..."
+                />
+            </label>
+            <button onClick={handleAddNote}>Add Note</button>
+            <ul>
+                {notes.map((note) => (
+                    <li key={note.id}>
+                        {note.text}
+                        <div>
+                            <button onClick={() => handleDeleteNote(note.id)}>
+                                Delete
+                            </button>
+                            <button onClick={() => handleArchiveNote(note.id)}>
+                                Archive
+                            </button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+```
+
+However, this approach has its drawbacks. The state management logic becomes scattered and cumbersome within the component itself. As the application grows, adding new actions or state leads to further code clutter, making it harder to maintain and test. Managing complex state through multiple `useState` hooks can become inefficient and error-prone, especially in large projects.
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Approach using useReducer
+
+Now let's take a look at the same functionality, but using `useReducer` hook:
+
+```typescript
+let nextId = 3;
+
+export interface INote {
+    id: number;
+    text: string;
+    archived: boolean;
+}
+
+export enum Actions {
+    ADD_NOTE,
+    ARCHIVE_NOTE,
+    DELETE_NOTE,
+}
+
+type ActionType =
+    | { type: Actions.ADD_NOTE; payload: string }
+    | { type: Actions.ARCHIVE_NOTE; payload: number }
+    | { type: Actions.DELETE_NOTE; payload: number };
+
+const notesReducer = (state: INote[], action: ActionType): INote[] => {
+    switch (action.type) {
+        case Actions.ADD_NOTE: {
+            const newNote: INote = {
+                id: nextId++,
+                text: action.payload,
+                archived: false,
+            };
+            return [...state, newNote];
+        }
+        case Actions.ARCHIVE_NOTE:
+            return state.map((note) =>
+                note.id === action.payload ? { ...note, archived: true } : note
+            );
+        case Actions.DELETE_NOTE:
+            return state.filter((note) => note.id !== action.payload);
+        default:
+            return state;
+    }
+};
+
+export default notesReducer;
+```
+
+```tsx
+const initialNotes: INote[] = [
+    {
+        id: 0,
+        text: 'Project name idea: "Blue Sky"',
+        archived: false,
+    },
+    {
+        id: 1,
+        text: 'Book recommendation: "Gam" by Erich Maria Remarque',
+        archived: false,
+    },
+    {
+        id: 2,
+        text: 'Style idea: Green scarf with blue pants',
+        archived: false,
+    },
+];
+
+const NotesApp = () => {
+    const [notes, dispatch] = useReducer(notesReducer, initialNotes);
+
+    const [inputValue, setInputValue] = useState('');
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value);
+    };
+
+    const handleAddNote = () => {
+        if (inputValue.trim() !== '') {
+            dispatch({ type: Actions.ADD_NOTE, payload: inputValue });
+
+            setInputValue('');
+        }
+    };
+
+    const handleArchiveNote = (noteId: number) => {
+        dispatch({ type: Actions.ARCHIVE_NOTE, payload: noteId });
+    };
+
+    const handleDeleteNote = (noteId: number) => {
+        dispatch({ type: Actions.DELETE_NOTE, payload: noteId });
+    };
+
+    return (
+        <div>
+            <label>
+                New note
+                <input
+                    type="text"
+                    name="note"
+                    value={inputValue}
+                    onChange={handleChange}
+                    placeholder="Enter your note..."
+                />
+            </label>
+            <button onClick={handleAddNote}>Add Note</button>
+            <ul>
+                {notes.map((note) => (
+                    <li key={note.id}>
+                        {note.text}
+                        <div>
+                            <button onClick={() => handleDeleteNote(note.id)}>
+                                Delete
+                            </button>
+                            <button onClick={() => handleArchiveNote(note.id)}>
+                                Archive
+                            </button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+```
+
+This approach allows us to manage state in a more structured and predictable way, especially when the state becomes complex. Extracting state management logic into a reducer simplifies the component itself, making it cleaner and easier to understand. When you need to add a new action or state, you don't have to clutter the component code — just make changes to the reducer.
+
+Moreover, `useReducer` hook makes it easier to test and reuse state management logic. Reducers can be easily isolated and tested separately from components. This is particularly useful in large projects where complex state logic might be shared across multiple components. Additionally, using `useReducer` hook can improve performance by avoiding unnecessary re-renders that can occur with multiple `useState` hooks.
+
+Using `useReducer` instead of `useState` can significantly simplify managing complex state in your application. It makes the code more structured and easier to maintain, especially as the application grows. Don't hesitate to use this powerful tool before resorting to third-party state management libraries.
+
+</ContentWrapper>

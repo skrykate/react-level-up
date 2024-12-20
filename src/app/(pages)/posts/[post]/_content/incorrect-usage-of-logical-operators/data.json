@@ -1,0 +1,9 @@
+{
+    "title": "Incorrect Usage of Logical Operators",
+    "description": "Learn the best practices for handling logical operators in React components! Explore common pitfalls with the && operator and discover improved methods using boolean values, ternary operators, and component decomposition for better UI logic and maintainability.",
+    "section": "common mistakes",
+    "last_updated_date": "23.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

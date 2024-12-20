@@ -1,0 +1,309 @@
+import { CaseTwoUsers } from './_features/case-two-users';
+import { CaseRandomColors } from './_features/case-random-colors';
+import { CaseRandomValue } from './_features/case-random-value';
+import { CaseCounter } from './_features/case-counter';
+
+<ContentWrapper>
+## Explanation
+
+The custom React hook `usePrevious` offers a straightforward solution for tracking the previous value of a state or prop within functional components. With just a few lines of code, developers can easily access the previous value without resorting to complex state management techniques.
+
+By leveraging React's `useRef` and `useEffect` hooks, `usePrevious` maintains a reference to the previous value, updating it whenever the provided value changes. This approach ensures that the previous value remains accessible across renders, providing a simple yet effective method for comparison and tracking.
+
+Integrating `usePrevious` into React components enhances their flexibility and facilitates scenarios where knowing the previous state or prop value is essential. Whether managing UI transitions, handling asynchronous updates, or implementing conditional logic based on changes, `usePrevious` empowers developers with a reliable tool for building robust and responsive React applications.
+
+### Usage Cases
+
+-   **Tracking State Changes**: Monitor and compare changes in state values, facilitating dynamic UI updates and conditional rendering based on state transitions.
+-   **Monitoring Value Changes**: Observe alterations in specific values, enabling responsive behavior in React components and enhancing user interaction through visual feedback.
+-   **Conditional Rendering**: Enhance conditional rendering logic by comparing current and previous values, enabling efficient rendering of components based on state or prop changes.
+-   **Managing Color Transitions**: Facilitate smooth transitions between different color states in React components, improving visual aesthetics.
+-   **Handling Asynchronous Operations**: Efficiently manage asynchronous operations by tracking previous values, ensuring consistent user experience.
+-   **Enhancing User Interaction**: Provide insights into previous state or prop values, enabling intuitive UI updates and seamless transitions between different application states.
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Creation
+
+```typescript
+const usePrevious = <T>(value: T): T | null => {
+    // Call `useRef` to create a mutable `ref` object that persists across renders
+    const prevValueRef = useRef<T | null>(null);
+
+    useEffect(() => {
+        // Update `prevValueRef` when the `value` (its reference) changes
+        prevValueRef.current = value;
+    }, [value]);
+
+    return prevValueRef.current;
+};
+
+export default usePrevious;
+```
+
+</ContentWrapper>
+
+<ContentWrapper>
+
+## Reference
+
+```tsx
+const prevValue = usePrevious(value);
+```
+
+### Parameters
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'value',
+                cells: ['T', 'The current value to track and compare. '],
+            },
+        ],
+    }}
+/>
+
+### Return Values
+
+<Table
+    tableContent={{
+        headerItems: ['Name', 'Type', 'Description'],
+        bodyItems: [
+            {
+                head: 'prevValue',
+                cells: [
+                    'T | null',
+                    'The previous value of the provided value parameter.',
+                ],
+            },
+        ],
+    }}
+/>
+
+</ContentWrapper>
+
+<ContentWrapper>
+## Example Usages
+
+### Tracking Count Changes
+
+This example demonstrates how to employ the `usePrevious` custom hook to track and display the previous value of a state in a React functional component. By integrating `usePrevious`, developers can easily compare the current and previous states, enhancing the user experience by providing insight into state transitions. The rendered UI showcases both the current and previous count values, enabling users to observe changes as they interact with the component.
+
+```tsx
+const Container: FC = () => {
+    // State to track the current count
+    const [count, setCount] = useState(1);
+
+    // Use the custom hook to get the previous value of the `count` state
+    const prevCount = usePrevious(count);
+
+    const prevValue = prevCount !== null ? prevCount : 'null';
+
+    return (
+        <Layer title="Container">
+            <Text>
+                Current value: {count}
+                <br />
+                Previous value: {prevValue}
+            </Text>
+            <Counter
+                min={1}
+                max={9}
+                value={count}
+                onChange={setCount}
+            />
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseCounter />
+</ExampleWrapper>
+
+### Conditional Emoji Display Based on Value Difference
+
+This example demonstrates the usage of a custom `usePrevious` hook to access the previous state value. A random value is generated and stored in the state on button click, and the previous value is retrieved using the hook. The component calculates whether the difference between the current and previous values is even and conditionally renders an emoji if `isDifferenceEven` is `true`. This demonstrates the versatility of `usePrevious` in tracking state transitions and enhancing user interaction within React components.
+
+```tsx
+const Container: FC = () => {
+    // State to manage the current value
+    const [value, setValue] = useState(0);
+
+    // Use `usePrevious` hook to get the previous value of `value`
+    const prevValue = usePrevious(value);
+
+    // Function to handle button click and generate a random value
+    const handleClick = () => {
+        const randomValue = generateRandomValue();
+
+        setValue(randomValue);
+    };
+
+    // Checking if the difference between current and previous value is even
+    const isDifferenceEven = prevValue ? (value - prevValue) % 2 === 0 : null;
+
+    return (
+        <Layer title="Container">
+            <Message>If the difference is even, the Emoji will appear.</Message>
+            <Text>
+                Current Value: {value}
+                <br />
+                Previous Value: {prevValue !== null ? prevValue : 'null'}
+                <br />
+                {/* Conditionally render emoji when the difference is even */}
+                Difference even: {isDifferenceEven ? 'Yes 😊!' : 'No'}
+            </Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleClick}>Generate random value</Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseRandomValue />
+</ExampleWrapper>
+
+### Color Change with Previous Value Display
+
+This component tracks the current and previous color values. It generates a random color when the button is clicked, updating the `currentColor` state. The component then conditionally displays both the current and previous colors, with the previous color defaulting to the current color if it isn't yet available.
+
+```tsx
+const Container: FC = () => {
+    // State to manage the current color
+    const [currentColor, setCurrentColor] = useState('hsl(303, 70%, 100%)');
+
+    // Call `usePrevious` hook to get the previous value of `currentColor`
+    const prevColor = usePrevious(currentColor);
+
+    // Function to handle button click and generate a random color
+    const handleClick = () => {
+        const randomColor = getRandomColor();
+
+        setCurrentColor(randomColor);
+    };
+
+    return (
+        <Layer title="Container">
+            <Text>
+                Current:{' '}
+                <span style={{ color: currentColor }}>{currentColor}</span>
+                <br />
+                Previous:{' '}
+                <span style={{ color: prevColor ?? 'white' }}>
+                    {prevColor ?? currentColor}
+                </span>
+            </Text>
+            <div className="flex w-full justify-center">
+                <Button onClick={handleClick}>Generate random color</Button>
+            </div>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseRandomColors />
+</ExampleWrapper>
+
+### User Name Fetching with Previous Value Tracking
+
+This example demonstrates how to utilize the `usePrevious` custom hook to track changes in a user's name fetched asynchronously. By integrating `usePrevious`, developers can efficiently compare the current and previous name values, providing users with insight into name transitions. The usage of the `usePrevious` hook remains effective even in scenarios involving asynchronous operations. The rendered UI showcases both the current and previous names, enhancing the user experience by visualizing updates in real-time.
+
+```tsx
+const idsList = Array.from({ length: 5 }, (_, index) => ({
+    id: index + 1,
+    name: `User Id: ${index + 1}`,
+}));
+
+// Function to fetch user's name asynchronously
+const fetchUserName = async (personId: number) => {
+    const data = await loadData();
+
+    const user = data.find((user) => user.id === personId);
+
+    return user!.name;
+};
+
+const Container: FC = () => {
+    // State to manage selected person ID
+    const [personId, setPersonId] = useState(1);
+
+    // State to manage fetched name
+    const [value, setValue] = useState<string | null>(null);
+
+    // State to manage loading state
+    const [isLoading, setLoading] = useState(true);
+
+    // Use `usePrevious` hook to get the previous name
+    const prevValue = usePrevious(value);
+
+    // Handler to update the selected person ID
+    const handleChange = (item: (typeof idsList)[0]) => {
+        setPersonId(item.id);
+    };
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        setLoading(true);
+
+        const fetchName = async () => {
+            try {
+                const newName = await fetchUserName(personId);
+
+                // Check if the component is unmounted to avoid updating state after unmounting
+                if (!isCancelled) {
+                    setValue(newName);
+
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error('Error fetching name:', error);
+
+                setLoading(false);
+            }
+        };
+
+        fetchName();
+
+        return () => {
+            // Set a flag to handle the case where the component unmounts before the request completes
+            isCancelled = true;
+        };
+    }, [personId]);
+
+    const currentName = value ?? 'null';
+
+    const prevName = prevValue ?? 'null';
+
+    return (
+        <Layer title="Container">
+            <label>Select a person ID:</label>
+            <List
+                items={idsList}
+                selected={personId}
+                onClick={handleChange}
+            />
+            <Text>
+                <span className={isLoading ? 'opacity-30' : ''}>
+                    Current name: {currentName}
+                    <br />
+                    Previous name: {prevName}
+                </span>
+            </Text>
+        </Layer>
+    );
+};
+```
+
+<ExampleWrapper isResetAllowed>
+    <CaseTwoUsers />
+</ExampleWrapper>
+
+</ContentWrapper>

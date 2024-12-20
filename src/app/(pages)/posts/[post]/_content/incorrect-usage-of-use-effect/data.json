@@ -1,0 +1,9 @@
+{
+    "title": "Incorrect Usage of useEffect",
+    "description": "Master the correct use of React's `useEffect` hook! Learn about common mistakes, how improper usage can degrade performance, and practical tips for using dependencies, cleaning up effects, and decomposing them for better maintainability.",
+    "section": "common mistakes",
+    "last_updated_date": "28.05.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

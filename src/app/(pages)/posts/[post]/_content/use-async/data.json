@@ -1,0 +1,9 @@
+{
+    "title": "useAsync( )",
+    "description": "The `useAsync` hook simplifies asynchronous task handling in React components, with an optional immediate execution capability. In this article, you'll find practical code implementations and real-world use cases, demonstrating how the custom hook can be applied in various scenarios. We'll break down the process of creating the hook, explain its key features, and provide a detailed explanation to help you understand its functionality and use.",
+    "section": "custom hooks",
+    "last_updated_date": "16.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}

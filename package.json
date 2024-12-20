@@ -1,0 +1,57 @@
+{
+    "name": "react-level-up",
+    "version": "1.0.0",
+    "author": "skrykate",
+    "contributors": [
+        {
+            "name": "Ekaterina Skrynnik (@skrykate)",
+            "url": "https://linkedin.com/in/skrykate/"
+        },
+        {
+            "name": "Nikita Rise (@risenikita)",
+            "url": "https://linkedin.com/in/risenikita/"
+        }
+    ],
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "check:lint": "next lint",
+        "format": "prettier --check 'src/**/*.{js,ts,tsx,json,md}'",
+        "format:write": "prettier --write 'src/**/*.{js,ts,tsx,json,md}'",
+        "deploy:vercel": "npm run deploy",
+        "deploy": "npm run build"
+    },
+    "dependencies": {
+        "@mdx-js/loader": "^3.1.0",
+        "@mdx-js/react": "^3.1.0",
+        "@next/mdx": "^15.0.3",
+        "@next/third-parties": "^15.0.3",
+        "@radix-ui/react-separator": "^1.1.0",
+        "@radix-ui/react-tooltip": "^1.1.2",
+        "bright": "^0.8.5",
+        "clsx": "^2.1.1",
+        "lucide-react": "^0.427.0",
+        "next": "14.2.5",
+        "next-themes": "^0.3.0",
+        "nextjs-toploader": "^1.6.12",
+        "react": "^18",
+        "react-dom": "^18",
+        "tailwind-merge": "^2.5.2",
+        "zustand": "^5.0.1"
+    },
+    "devDependencies": {
+        "@types/mdx": "^2.0.13",
+        "@types/node": "^20",
+        "@types/react": "^18",
+        "@types/react-dom": "^18",
+        "eslint": "^8",
+        "eslint-config-next": "14.2.5",
+        "postcss": "^8",
+        "prettier": "^3.3.3",
+        "prettier-plugin-tailwindcss": "^0.6.6",
+        "tailwindcss": "^3.4.1",
+        "typescript": "^5"
+    }
+}

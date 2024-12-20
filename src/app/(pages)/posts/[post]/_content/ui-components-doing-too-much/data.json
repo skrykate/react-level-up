@@ -1,0 +1,9 @@
+{
+    "title": "UI Components Doing Too Much",
+    "description": "Learn why separating business logic from UI components is essential in React development. Discover the benefits of this approach, including better code readability, reusability, and maintainability, with practical tips and code examples.",
+    "section": "common-mistakes",
+    "last_updated_date": "10.06.24",
+    "flags": {
+        "showCodeNotice": true
+    }
+}
