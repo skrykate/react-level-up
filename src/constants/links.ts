@@ -9,5 +9,7 @@ export const _APP_LINKS_GITHUB: ILink = {
 };
 
 export const _APP_LINK_GITHUB_DATA_POST = (postId: string) => {
-    return `${_APP_LINKS_GITHUB.url}/blob/main/src/app/(pages)/[post]/_content/${postId}`;
+    const uri = `${_APP_LINKS_GITHUB.url}/blob/main/src/app/(pages)/posts/[post]/_content/${postId}/page.mdx`;
+
+    return encodeURI(uri);
 };
