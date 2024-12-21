@@ -4,6 +4,7 @@ import { CaseAutoCompleteBad } from './_features/case-autocomplete-bad';
 import { CaseAutoCompleteGood } from './_features/case-autocomplete-good';
 
 <ContentWrapper>
+
 In the React development environment, built-in hooks are essential tools for managing side effects and component states. As suggested by the title of this article, we will be focusing specifically on the `useEffect` hook. It's a powerful tool for handling side effects in functional components, such as making API requests, setting up event subscriptions, updating document titles, and manipulating the DOM outside of regular rendering. However, when working with inputs, excessive use of `useEffect` can lead to unforeseen bugs and complicate the application logic. This article will delve into a common mistake associated with using `useEffect` in input components, as well as propose a more efficient approach to help avoid problems and make the code cleaner and more predictable.
 
 To understand what is being discussed, let's code. We will consider the problem using a primitive autocomplete component as an example. The first step is, of course, to render the input itself, store its state, and define the `handleChange` . So far, everything is familiar and clear:
@@ -399,6 +400,7 @@ To summarize — in the "Clear Instructions Approach", the `handleSelectCharacte
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Comparison
 
 <Table
@@ -447,6 +449,7 @@ To summarize — in the "Clear Instructions Approach", the `handleSelectCharacte
 </ContentWrapper>
 
 <ContentWrapper>
+
 This topic may seem overly simplistic, but I often see such workaround solutions ("useEffect Approach") everywhere — I can't recall anyone not using `useEffect` when working with inputs. Most likely, the root of the problem is poor understanding of the tool's documentation, which clearly states the purpose of `useEffect` <A href="https://react.dev/reference/react/useEffect">hook</A>:
 
 > `useEffect` is a React Hook that lets you synchronize a component with an external system.

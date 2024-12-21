@@ -2,6 +2,7 @@ import { CaseUseCallback } from './_features/case-use-callback';
 import { CaseUseMemo } from './_features/case-use-memo';
 
 <ContentWrapper>
+
 Rendering is one of the key aspects to consider when writing robust React components. Re-rendering can occur frequently, for example, due to changes in props, the component's own state, or the state within a custom hook used in the component. It's important to remember that with each re-render, the rendering function is executed again, meaning any work done inside it will be repeated. This is absolutely logical, as it's necessary for correctly displaying the component with updated data.
 
 In the context of rendering, React components interact with two types of data: data that triggers a re-render when it changes (e.g., state, props), and data derived during rendering based on props and state. If the computation of this derived data is resource-intensive and depends solely on a specific prop, re-renders caused by changes in the component's state (which don't affect the computation) can lead to redundant calculations, negatively impacting the application's performance.
@@ -11,6 +12,7 @@ To avoid redundant work, React provides `useMemo` and `useCallback` hooks, which
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## useMemo <span id="use-memo-usage" />
 
 The `useMemo` hook enables you to memoize the results of computations that depend on specific input data. If the input data remains unchanged, `useMemo` returns the previously memoized value instead of recomputing it, making it particularly useful for optimizing resource-intensive calculations.
@@ -350,6 +352,7 @@ However, the reference to the function has changed because it was recreated duri
 </ContentWrapper>
 
 <ContentWrapper>
+
 Using the `useMemo` and `useCallback` hooks helps avoid redundant work during rendering, thereby improving the performance of React applications. However, it's important to remember that incorrect use of these hooks can lead to unexpected results and make debugging difficult. Always carefully check the values specified in the dependency array to ensure that memoization works correctly and efficiently.
 
 </ContentWrapper>

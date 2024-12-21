@@ -24,7 +24,7 @@ const CookieBanner: FC = () => {
     if (isCookieBannerHidden) return null;
 
     return (
-        <Alert className="fixed bottom-0 z-50 max-w-fit md:bottom-4">
+        <Alert className="fixed bottom-0 z-50 m-1 max-w-fit md:bottom-4">
             <Cookie className="h-6 w-6" />
             <AlertContent>
                 <AlertTitle>Hands up!</AlertTitle>
