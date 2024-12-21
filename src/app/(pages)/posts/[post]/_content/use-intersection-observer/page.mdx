@@ -3,6 +3,7 @@ import { CaseTodoList } from './_features/case-todo-list';
 import { CaseLazyImage } from './_features/case-lazy-image';
 
 <ContentWrapper>
+
 ## Explanation
 
 The custom hook `useIntersectionObserver` facilitates the observation of element visibility in React components through the `IntersectionObserver` API. It not only detects when a specified DOM element enters or exits the viewport but also maintains a state variable `isIntersecting`, reflecting the current visibility status of the target element. This state variable allows React components to respond dynamically to changes in element visibility, enabling the execution of tailored actions based on whether the element is intersecting with the viewport or not.
@@ -25,6 +26,7 @@ With its ability to encapsulate intersection observation logic, manage visibilit
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Creation
 
 ```typescript
@@ -239,6 +241,7 @@ const [isIntersecting, unobserve] = useIntersectionObserver({
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Example Usages
 
 ### Lazy Loading of an Image in an Article

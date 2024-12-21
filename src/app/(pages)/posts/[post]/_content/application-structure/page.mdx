@@ -50,7 +50,7 @@ Having established the importance of organizing components in their own director
 
 Inefficient file organization — placing all files in one location:
 
-```code
+```ts
 ├── components
     ├── widgets
         ├── Navbar.tsx
@@ -65,7 +65,7 @@ In this example, all widget-related files are placed in the same directory, whic
 
 Efficient file organization — placing files in their own directories:
 
-```code
+```ts
 ├── components
     ├── widgets
         ├── navbar
@@ -112,13 +112,14 @@ Efficiently wrapping external components through adapters enhances code support 
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Separation of Business Logic and UI Components
 
 Components such as buttons and input fields are widely used throughout applications. Separating business logic components from UI components also involves organizing file structures accordingly. This facilitates easier navigation within the project and promotes component reuse.
 
 The project structure should clearly distinguish between components designed for business logic and those for UI. Consider an example file structure of a project:
 
-```code
+```ts
 ├── components
     ├── ui
         ├── button

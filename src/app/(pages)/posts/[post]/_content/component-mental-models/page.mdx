@@ -12,15 +12,15 @@ This traditional model divides components into two groups:
 
 ### Presentational Components (or "Dumb" Components)
 
-    - Don't contain state or logic.
-    - Receive data through props from parent components.
-    - Responsible for displaying data.
+-   Don't contain state or logic.
+-   Receive data through props from parent components.
+-   Responsible for displaying data.
 
 ### Container Components (or "Smart" Components)
 
-    - Contain state and business logic.
-    - Make requests to fetch data.
-    - Manage the application's state.
+-   Contain state and business logic.
+-   Make requests to fetch data.
+-   Manage the application's state.
 
 This approach is reminiscent of the MVC pattern used in server-side applications, where logic and presentation are separated. However, in the context of modern client-side applications, this approach can lead to problems and requires additional clarifications and adjustments.
 
@@ -38,15 +38,15 @@ To improve code quality and ease of maintenance, it's important to redistribute 
 
 ### Components with State
 
-    - Hold the state necessary for their operation.
-    - Responsible for managing the state and business logic related to their functionality.
+-   Hold the state necessary for their operation.
+-   Responsible for managing the state and business logic related to their functionality.
 
 ### Stateless Components
 
-    - Receive data through props.
-    - Responsible for displaying data.
-    - Handle user interactions through passed callbacks, the logic of which is implemented in higher-level stateful components.
-    - Don't contain their own logic.
+-   Receive data through props.
+-   Responsible for displaying data.
+-   Handle user interactions through passed callbacks, the logic of which is implemented in higher-level stateful components.
+-   Don't contain their own logic.
 
 The main difference between the traditional and modern approaches is that in the modern approach, state and logic are distributed among a larger number of components, which helps avoid excessive complexity and improves code modularity.
 

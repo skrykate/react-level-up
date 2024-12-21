@@ -4,6 +4,7 @@ import { CaseRestructured } from './_features/case-restructured';
 import { CaseStateManager } from './_features/case-state-manager';
 
 <ContentWrapper>
+
 Prop drilling — is the practice of passing a single property through multiple levels of components from parent to child. This approach is often used in React applications to pass data down the component tree. However, it can lead to difficulties in maintaining code and deteriorate performance when passing data through many levels.
 
 Ideally, it's best to avoid passing props more than two levels deep. Let's consider the problem with an example code that has 3 layers:
@@ -382,6 +383,7 @@ const Container: FC = () => {
 </ContentWrapper>
 
 <ContentWrapper>
+
 Each of these approaches has its pros and cons. For example, React Context is well suited for small to medium-sized applications but can become cumbersome when scaled. On the other hand, a state manager provides powerful tools for state management but requires significant effort for setup and training. Restructuring components is not always suitable and may be impractical in some cases, as it may require significant changes to the architecture of the application and lead to code maintenance challenges. The choice of the appropriate tool depends on the specific requirements of your project and the structure of your application.
 
 It's important to remember that using prop drilling itself is not a mistake. It's a normal part of React development that only becomes a problem with excessive use (more than two levels deep). For example, for small applications or components with simple data, prop drilling may be entirely appropriate. Always strive to keep your code clean, readable, and easy to maintain.

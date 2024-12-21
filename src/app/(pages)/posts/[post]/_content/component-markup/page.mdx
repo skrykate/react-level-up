@@ -392,6 +392,7 @@ This approach allows creating more maintainable and efficient components, improv
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Conditional Rendering
 
 When developing with React, conditional rendering of components is often necessary. One popular way is using the logical `&&` operator. This approach allows for reducing the amount of code and is convenient for quick rendering. However, in some cases, this method can lead to unexpected results. For example, if a variable value equals `0`, this value will also be displayed in the UI, which is usually undesirable. To avoid such situations, it's recommended to use the ternary operator. Although it's more verbose, it ensures correct display even when the value is `0`. Moreover, the ternary operator facilitates adding alternative rendering options if needed.
@@ -445,6 +446,7 @@ This is one way to solve such a problem. For more information on other methods, 
 </ContentWrapper>
 
 <ContentWrapper>
+
 ## Ternary Operators
 
 Ternary operators represent a concise form of writing conditional expressions in JavaScript, which can be useful for making simple decisions based on conditions. In React, they're also used for conditional rendering. However, their use at multiple levels of nesting can significantly impair code readability and complicate its maintenance in the future. Despite their compactness, in such cases, it's preferable to explicitly separate the logic into more understandable components. Extracting nested logic into separate components helps reduce the use of ternary operators to a single level.
